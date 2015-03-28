@@ -45,6 +45,9 @@ class D3D
 	ComPtr<ID3D12DescriptorHeap> mDescHeapRtv;
 	ComPtr<ID3D12DescriptorHeap> mDescHeapCbvSrvUav;
 
+	ComPtr<ID3D12RootSignature> mRootSignature;
+	ComPtr<ID3D12PipelineState> mPso;
+
 public:
 	D3D(int width, int height, HWND hWnd)
 		: mBufferWidth(width), mBufferHeight(height), mDev(nullptr)
@@ -135,6 +138,48 @@ public:
 		}
 
 		mDev->CreateRenderTargetView(d3dBuffer, nullptr, mDescHeapRtv->GetCPUDescriptorHandleForHeapStart());
+
+		{
+			ID3D10Blob *sig, *info;
+			D3D12_ROOT_SIGNATURE rootSigDesc = D3D12_ROOT_SIGNATURE();
+			CHK(D3D12SerializeRootSignature(&rootSigDesc, D3D_ROOT_SIGNATURE_V1, &sig, &info));
+			ID3D12RootSignature* rootSignature;
+			mDev->CreateRootSignature(0, sig->GetBufferPointer(), sig->GetBufferSize(), IID_PPV_ARGS(&rootSignature));
+			sig->Release();
+			mRootSignature = rootSignature;
+		}
+
+		ID3D10Blob *vs, *ps;
+		{
+			ID3D10Blob *info;
+			UINT flag = 0;
+#if _DEBUG
+			flag |= D3DCOMPILE_DEBUG;
+#endif /* _DEBUG */
+			CHK(D3DCompileFromFile(L"FullScreen.hlsl", nullptr, nullptr, "VSMain", "vs_5_0", flag, 0, &vs, &info));
+			CHK(D3DCompileFromFile(L"FullScreen.hlsl", nullptr, nullptr, "PSMain", "ps_5_0", flag, 0, &ps, &info));
+		}
+		D3D12_GRAPHICS_PIPELINE_STATE_DESC psoDesc = {};
+		psoDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
+		psoDesc.InputLayout.NumElements = 0;
+		psoDesc.pRootSignature = mRootSignature.Get();
+		psoDesc.VS.pShaderBytecode = vs->GetBufferPointer();
+		psoDesc.VS.BytecodeLength = vs->GetBufferSize();
+		psoDesc.PS.pShaderBytecode = ps->GetBufferPointer();
+		psoDesc.PS.BytecodeLength = ps->GetBufferSize();
+		psoDesc.RasterizerState = CD3D12_RASTERIZER_DESC(D3D12_DEFAULT);
+		psoDesc.BlendState = CD3D12_BLEND_DESC(D3D12_DEFAULT);
+		psoDesc.DepthStencilState.DepthEnable = false;
+		psoDesc.DepthStencilState.StencilEnable = false;
+		psoDesc.SampleMask = UINT_MAX;
+		psoDesc.NumRenderTargets = 1;
+		psoDesc.RTVFormats[0] = DXGI_FORMAT_R8G8B8A8_UNORM;
+		psoDesc.SampleDesc.Count = 1;
+		ID3D12PipelineState* pso;
+		CHK(mDev->CreateGraphicsPipelineState(&psoDesc, IID_PPV_ARGS(&pso)));
+		vs->Release();
+		ps->Release();
+		mPso = pso;
 	}
 	~D3D()
 	{
@@ -157,11 +202,15 @@ public:
 		// Barrier Present -> RenderTarget
 		setResourceBarrier(mCmdList.Get(), mD3DBuffer.Get(), D3D12_RESOURCE_USAGE_PRESENT, D3D12_RESOURCE_USAGE_RENDER_TARGET);
 
-		// Viewport
+		// Viewport & Scissor
 		D3D12_VIEWPORT viewport = {};
 		viewport.Width = (float)mBufferWidth;
 		viewport.Height = (float)mBufferHeight;
 		mCmdList->RSSetViewports(1, &viewport);
+		D3D12_RECT scissor = {};
+		scissor.right = (LONG)mBufferWidth;
+		scissor.bottom = (LONG)mBufferHeight;
+		mCmdList->RSSetScissorRects(1, &scissor);
 
 		// Clear
 		{
@@ -174,6 +223,16 @@ public:
 			clearColor[1] = saturate(2.0f - std::abs(h * 6.0f - 2.0f));
 			clearColor[2] = saturate(2.0f - std::abs(h * 6.0f - 4.0f));
 			mCmdList->ClearRenderTargetView(descHandleRtv, clearColor, nullptr, 0);
+		}
+
+		mCmdList->SetRenderTargets(&descHandleRtv, true, 1, nullptr);
+
+		// Draw
+		{
+			mCmdList->SetGraphicsRootSignature(mRootSignature.Get());
+			mCmdList->SetPipelineState(mPso.Get());
+			mCmdList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
+			mCmdList->DrawInstanced(4, 1, 0, 0);
 		}
 
 		// Barrier RenderTarget -> Present
@@ -199,7 +258,7 @@ public:
 		CHK(mCmdAlloc->Reset());
 		CHK(mCmdList->Reset(mCmdAlloc.Get(), nullptr));
 	}
-	
+
 private:
 	void setResourceBarrier(ID3D12GraphicsCommandList* commandList, ID3D12Resource* res, UINT before, UINT after)
 	{
