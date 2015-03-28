@@ -32,7 +32,7 @@ class D3D
 	ComPtr<IDXGISwapChain1> mSwapChain;
 	ComPtr<ID3D12Resource> mD3DBuffer;
 	int mBufferWidth, mBufferHeight;
-	int mFrameCount = 0;
+	UINT64 mFrameCount = 0;
 
 	ID3D12Device* mDev;
 	ComPtr<ID3D12CommandAllocator> mCmdAlloc;
@@ -66,6 +66,7 @@ public:
 		CHK(D3D12CreateDevice(
 			nullptr,
 			D3D_DRIVER_TYPE_WARP,
+			//D3D_DRIVER_TYPE_HARDWARE,
 			createFlag,
 			D3D_FEATURE_LEVEL_11_1,
 			D3D12_SDK_VERSION,
@@ -279,7 +280,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	MSG msg;
 	ZeroMemory(&msg, sizeof msg);
 
-	ID3D12Device* dev;
+	ID3D12Device* dev = nullptr;
 
 #ifdef NDEBUG
 	try
