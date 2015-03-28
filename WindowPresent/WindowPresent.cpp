@@ -32,12 +32,15 @@ class D3D
 	ComPtr<IDXGISwapChain1> mSwapChain;
 	ComPtr<ID3D12Resource> mD3DBuffer;
 	int mBufferWidth, mBufferHeight;
+	int mFrameCount = 0;
 
 	ID3D12Device* mDev;
 	ComPtr<ID3D12CommandAllocator> mCmdAlloc;
 	ComPtr<ID3D12CommandQueue> mCmdQueue;
 
 	ComPtr<ID3D12GraphicsCommandList> mCmdList;
+	ComPtr<ID3D12Fence> mFence;
+	HANDLE mFenceEveneHandle = 0;
 
 	ComPtr<ID3D12DescriptorHeap> mDescHeapRtv;
 	ComPtr<ID3D12DescriptorHeap> mDescHeapCbvSrvUav;
@@ -100,6 +103,12 @@ public:
 			IID_PPV_ARGS(&graphicsCmdList)));
 		mCmdList = graphicsCmdList;
 
+		ID3D12Fence* fence;
+		CHK(mDev->CreateFence(0, D3D12_FENCE_MISC_NONE, IID_PPV_ARGS(&fence)));
+		mFence = fence;
+
+		mFenceEveneHandle = CreateEvent(nullptr, FALSE, FALSE, nullptr);
+
 		ID3D12Resource* d3dBuffer;
 		CHK(mSwapChain->GetBuffer(0, IID_PPV_ARGS(&d3dBuffer)));
 		d3dBuffer->SetName(L"SwapChain Buffer");
@@ -115,18 +124,19 @@ public:
 			CHK(mDev->CreateDescriptorHeap(&desc, IID_PPV_ARGS(&heap)));
 			mDescHeapRtv = heap;
 
-			desc.Type = D3D12_CBV_SRV_UAV_DESCRIPTOR_HEAP;
-			desc.NumDescriptors = 100;
-			desc.Flags = D3D12_DESCRIPTOR_HEAP_SHADER_VISIBLE;
-			desc.NodeMask = 0;
-			CHK(mDev->CreateDescriptorHeap(&desc, IID_PPV_ARGS(&heap)));
-			mDescHeapCbvSrvUav = heap;
+			//desc.Type = D3D12_CBV_SRV_UAV_DESCRIPTOR_HEAP;
+			//desc.NumDescriptors = 100;
+			//desc.Flags = D3D12_DESCRIPTOR_HEAP_SHADER_VISIBLE;
+			//desc.NodeMask = 0;
+			//CHK(mDev->CreateDescriptorHeap(&desc, IID_PPV_ARGS(&heap)));
+			//mDescHeapCbvSrvUav = heap;
 		}
 
 		mDev->CreateRenderTargetView(d3dBuffer, nullptr, mDescHeapRtv->GetCPUDescriptorHandleForHeapStart());
 	}
 	~D3D()
 	{
+		CloseHandle(mFenceEveneHandle);
 	}
 	ID3D12Device* GetDevice() const
 	{
@@ -134,10 +144,13 @@ public:
 	}
 	void Draw()
 	{
+		// Set queue flushed event
+		CHK(mFence->SetEventOnCompletion(mFrameCount, mFenceEveneHandle));
+
 		D3D12_CPU_DESCRIPTOR_HANDLE descHandleRtv = mDescHeapRtv->GetCPUDescriptorHandleForHeapStart();
 
-		ID3D12DescriptorHeap* descHeapRtv[] = { mDescHeapCbvSrvUav.Get()/*, mDescHeapRtv.Get()*/ };
-		mCmdList->SetDescriptorHeaps(descHeapRtv, ARRAYSIZE(descHeapRtv));
+		//ID3D12DescriptorHeap* descHeapRtv[] = { mDescHeapCbvSrvUav.Get()/*, mDescHeapRtv.Get()*/ };
+		//mCmdList->SetDescriptorHeaps(descHeapRtv, ARRAYSIZE(descHeapRtv));
 
 		// Barrier Present -> RenderTarget
 		setResourceBarrier(mCmdList.Get(), mD3DBuffer.Get(), D3D12_RESOURCE_USAGE_PRESENT, D3D12_RESOURCE_USAGE_RENDER_TARGET);
@@ -169,8 +182,17 @@ public:
 		ID3D12CommandList* const cmdList = mCmdList.Get();
 		mCmdQueue->ExecuteCommandLists(1, &cmdList);
 
+		// Present
 		CHK(mSwapChain->Present(1, 0));
-		Sleep(100);
+
+		// Wait for queue flushed
+		// CPU stall occured!
+		CHK(mCmdQueue->Signal(mFence.Get(), mFrameCount));
+		DWORD wait = WaitForSingleObject(mFenceEveneHandle, 10000);
+		if (wait != WAIT_OBJECT_0)
+			throw runtime_error("Failed WaitForSingleObject().");
+
+		mFrameCount++;
 
 		CHK(mCmdAlloc->Reset());
 		CHK(mCmdList->Reset(mCmdAlloc.Get(), nullptr));
@@ -185,6 +207,7 @@ private:
 		desc.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
 		desc.Transition.StateBefore = before;
 		desc.Transition.StateAfter = after;
+		desc.Transition.Flags = D3D12_RESOURCE_TRANSITION_BARRIER_NONE;
 		commandList->ResourceBarrier(1, &desc);
 	}
 };
