@@ -77,18 +77,6 @@ public:
 			IID_PPV_ARGS(&dev)));
 		mDev = dev;
 
-		DXGI_SWAP_CHAIN_DESC1 scDesc = {};
-		scDesc.Width = width;
-		scDesc.Height = height;
-		scDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
-		scDesc.SampleDesc.Count = 1;
-		scDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
-		scDesc.BufferCount = 1;
-		scDesc.SwapEffect = DXGI_SWAP_EFFECT_DISCARD;
-		IDXGISwapChain1* swapChain;
-		CHK(mDxgiFactory->CreateSwapChainForHwnd(dev, hWnd, &scDesc, nullptr, nullptr, &swapChain));
-		mSwapChain = swapChain;
-
 		ID3D12CommandAllocator* cmdAlloc;
 		CHK(mDev->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&cmdAlloc)));
 		mCmdAlloc = cmdAlloc;
@@ -98,6 +86,18 @@ public:
 		ID3D12CommandQueue* cmdQueue;
 		CHK(mDev->CreateCommandQueue(&queueDesc, IID_PPV_ARGS(&cmdQueue)));
 		mCmdQueue = cmdQueue;
+
+		DXGI_SWAP_CHAIN_DESC1 scDesc = {};
+		scDesc.Width = width;
+		scDesc.Height = height;
+		scDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+		scDesc.SampleDesc.Count = 1;
+		scDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
+		scDesc.BufferCount = 1;
+		scDesc.SwapEffect = DXGI_SWAP_EFFECT_DISCARD;
+		IDXGISwapChain1* swapChain;
+		CHK(mDxgiFactory->CreateSwapChainForHwnd(cmdQueue, hWnd, &scDesc, nullptr, nullptr, &swapChain));
+		mSwapChain = swapChain;
 
 		ID3D12GraphicsCommandList* graphicsCmdList;
 		CHK(mDev->CreateCommandList(
