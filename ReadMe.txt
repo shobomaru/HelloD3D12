@@ -20,8 +20,8 @@ Visual Studio Tools for Windows 10
 
 *** Test ***
 
-VirtualBox on Windows 8.1
-
+1. VirtualBox on Windows 8.1 (WDDM1.3)
+2. Radeon R7 240 (WDDM2.0)
 
 
 *** Author ***
