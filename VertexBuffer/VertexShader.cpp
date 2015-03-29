@@ -49,6 +49,7 @@ class D3D
 	ComPtr<ID3D12PipelineState> mPso;
 	ComPtr<ID3D12Resource> mVB;
 	D3D12_VERTEX_BUFFER_VIEW mVBView = {};
+	D3D12_INDEX_BUFFER_VIEW mIBView = {};
 
 public:
 	D3D(int width, int height, HWND hWnd)
@@ -154,6 +155,7 @@ public:
 		psoDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
 		psoDesc.InputLayout.NumElements = 1;
 		psoDesc.InputLayout.pInputElementDescs = inputLayout;
+		psoDesc.IndexBufferProperties = D3D12_INDEX_BUFFER_STRIP_CUT_VALUE_DISABLED;
 		psoDesc.pRootSignature = mRootSignature.Get();
 		psoDesc.VS.pShaderBytecode = vs->GetBufferPointer();
 		psoDesc.VS.BytecodeLength = vs->GetBufferSize();
@@ -179,22 +181,27 @@ public:
 			{  0.8f, -0.8f,  0.0f },
 			{ -0.8f, -0.8f,  0.0f }
 		};
+		unsigned short ibData[3] = { 0, 1, 2 };
 		CHK(mDev->CreateCommittedResource(
 			&CD3D12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD),
 			D3D12_HEAP_MISC_NONE,
-			&CD3D12_RESOURCE_DESC::Buffer(sizeof(vbData)),
+			&CD3D12_RESOURCE_DESC::Buffer(sizeof(vbData) + sizeof(ibData)),
 			D3D12_RESOURCE_USAGE_GENERIC_READ,
 			nullptr,
 			IID_PPV_ARGS(mVB.ReleaseAndGetAddressOf())));
 		mVB->SetName(L"VertexBuffer");
-		void* vbUploadPtr = nullptr;
-		CHK(mVB->Map(0, nullptr, &vbUploadPtr));
+		char* vbUploadPtr = nullptr;
+		CHK(mVB->Map(0, nullptr, reinterpret_cast<void**>(&vbUploadPtr)));
 		memcpy_s(vbUploadPtr, sizeof(vbData), vbData, sizeof(vbData));
+		memcpy_s(vbUploadPtr + sizeof(vbData), sizeof(ibData), ibData, sizeof(ibData));
 		mVB->Unmap(0, nullptr);
 
 		mVBView.BufferLocation = mVB->GetGPUVirtualAddress();
 		mVBView.StrideInBytes = sizeof(float3);
 		mVBView.SizeInBytes = sizeof(vbData);
+		mIBView.BufferLocation = mVB->GetGPUVirtualAddress() + sizeof(vbData);
+		mIBView.Format = DXGI_FORMAT_R16_UINT;
+		mIBView.SizeInBytes = sizeof(ibData);
 	}
 	~D3D()
 	{
@@ -248,7 +255,8 @@ public:
 			mCmdList->SetPipelineState(mPso.Get());
 			mCmdList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 			mCmdList->SetVertexBuffers(0, &mVBView, 1);
-			mCmdList->DrawInstanced(3, 1, 0, 0);
+			mCmdList->SetIndexBuffer(&mIBView);
+			mCmdList->DrawIndexedInstanced(3, 1, 0, 0, 0);
 		}
 
 		// Barrier RenderTarget -> Present
