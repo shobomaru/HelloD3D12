@@ -50,13 +50,11 @@ public:
 		: mBufferWidth(width), mBufferHeight(height), mDev(nullptr)
 	{
 		{
-			IDXGIFactory2* dxgiFactory2;
 #if _DEBUG
-			CHK(CreateDXGIFactory2(DXGI_CREATE_FACTORY_DEBUG, IID_PPV_ARGS(&dxgiFactory2)));
+			CHK(CreateDXGIFactory2(DXGI_CREATE_FACTORY_DEBUG, IID_PPV_ARGS(mDxgiFactory.ReleaseAndGetAddressOf())));
 #else
 			CHK(CreateDXGIFactory2(0, IID_PPV_ARGS(&dxgiFactory2)));
 #endif /* _DEBUG */
-			mDxgiFactory = dxgiFactory2;
 		}
 
 		D3D12_CREATE_DEVICE_FLAG createFlag = D3D12_CREATE_DEVICE_NONE;
@@ -74,15 +72,11 @@ public:
 			IID_PPV_ARGS(&dev)));
 		mDev = dev;
 
-		ID3D12CommandAllocator* cmdAlloc;
-		CHK(mDev->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&cmdAlloc)));
-		mCmdAlloc = cmdAlloc;
+		CHK(mDev->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(mCmdAlloc.ReleaseAndGetAddressOf())));
 
 		D3D12_COMMAND_QUEUE_DESC queueDesc = {};
 		queueDesc.Type = D3D12_COMMAND_LIST_TYPE_DIRECT;
-		ID3D12CommandQueue* cmdQueue;
-		CHK(mDev->CreateCommandQueue(&queueDesc, IID_PPV_ARGS(&cmdQueue)));
-		mCmdQueue = cmdQueue;
+		CHK(mDev->CreateCommandQueue(&queueDesc, IID_PPV_ARGS(mCmdQueue.ReleaseAndGetAddressOf())));
 
 		DXGI_SWAP_CHAIN_DESC1 scDesc = {};
 		scDesc.Width = width;
@@ -92,29 +86,21 @@ public:
 		scDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
 		scDesc.BufferCount = 1;
 		scDesc.SwapEffect = DXGI_SWAP_EFFECT_DISCARD;
-		IDXGISwapChain1* swapChain;
-		CHK(mDxgiFactory->CreateSwapChainForHwnd(cmdQueue, hWnd, &scDesc, nullptr, nullptr, &swapChain));
-		mSwapChain = swapChain;
+		CHK(mDxgiFactory->CreateSwapChainForHwnd(mCmdQueue.Get(), hWnd, &scDesc, nullptr, nullptr, mSwapChain.ReleaseAndGetAddressOf()));
 
-		ID3D12GraphicsCommandList* graphicsCmdList;
 		CHK(mDev->CreateCommandList(
 			0,
 			D3D12_COMMAND_LIST_TYPE_DIRECT,
 			mCmdAlloc.Get(),
 			nullptr,
-			IID_PPV_ARGS(&graphicsCmdList)));
-		mCmdList = graphicsCmdList;
+			IID_PPV_ARGS(mCmdList.ReleaseAndGetAddressOf())));
 
-		ID3D12Fence* fence;
-		CHK(mDev->CreateFence(0, D3D12_FENCE_MISC_NONE, IID_PPV_ARGS(&fence)));
-		mFence = fence;
+		CHK(mDev->CreateFence(0, D3D12_FENCE_MISC_NONE, IID_PPV_ARGS(mFence.ReleaseAndGetAddressOf())));
 
 		mFenceEveneHandle = CreateEvent(nullptr, FALSE, FALSE, nullptr);
 
-		ID3D12Resource* d3dBuffer;
-		CHK(mSwapChain->GetBuffer(0, IID_PPV_ARGS(&d3dBuffer)));
-		d3dBuffer->SetName(L"SwapChain Buffer");
-		mD3DBuffer = d3dBuffer;
+		CHK(mSwapChain->GetBuffer(0, IID_PPV_ARGS(mD3DBuffer.ReleaseAndGetAddressOf())));
+		mD3DBuffer->SetName(L"SwapChain_Buffer");
 
 		{
 			D3D12_DESCRIPTOR_HEAP_DESC desc = {};
@@ -122,19 +108,16 @@ public:
 			desc.NumDescriptors = 10;
 			//desc.Flags = D3D12_DESCRIPTOR_HEAP_SHADER_VISIBLE;
 			desc.NodeMask = 0;
-			ID3D12DescriptorHeap* heap;
-			CHK(mDev->CreateDescriptorHeap(&desc, IID_PPV_ARGS(&heap)));
-			mDescHeapRtv = heap;
+			CHK(mDev->CreateDescriptorHeap(&desc, IID_PPV_ARGS(mDescHeapRtv.ReleaseAndGetAddressOf())));
 
 			//desc.Type = D3D12_CBV_SRV_UAV_DESCRIPTOR_HEAP;
 			//desc.NumDescriptors = 100;
 			//desc.Flags = D3D12_DESCRIPTOR_HEAP_SHADER_VISIBLE;
 			//desc.NodeMask = 0;
-			//CHK(mDev->CreateDescriptorHeap(&desc, IID_PPV_ARGS(&heap)));
-			//mDescHeapCbvSrvUav = heap;
+			//CHK(mDev->CreateDescriptorHeap(&desc, IID_PPV_ARGS(mDescHeapCbvSrvUav.ReleaseAndGetAddressOf())));
 		}
 
-		mDev->CreateRenderTargetView(d3dBuffer, nullptr, mDescHeapRtv->GetCPUDescriptorHandleForHeapStart());
+		mDev->CreateRenderTargetView(mD3DBuffer.Get(), nullptr, mDescHeapRtv->GetCPUDescriptorHandleForHeapStart());
 	}
 	~D3D()
 	{
@@ -168,7 +151,7 @@ public:
 			auto saturate = [](float a) { return a < 0 ? 0 : a > 1 ? 1 : a; };
 			float clearColor[4];
 			static float h = 0.0f;
-			h += 0.02f;
+			h += 0.01f;
 			if (h >= 1) h = 0.0f;
 			clearColor[0] = saturate(std::abs(h * 6.0f - 3.0f) - 1.0f);
 			clearColor[1] = saturate(2.0f - std::abs(h * 6.0f - 2.0f));
