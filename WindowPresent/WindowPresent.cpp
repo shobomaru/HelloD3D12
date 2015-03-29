@@ -120,7 +120,7 @@ public:
 			D3D12_DESCRIPTOR_HEAP_DESC desc = {};
 			desc.Type = D3D12_RTV_DESCRIPTOR_HEAP;
 			desc.NumDescriptors = 10;
-			desc.Flags = D3D12_DESCRIPTOR_HEAP_SHADER_VISIBLE;
+			//desc.Flags = D3D12_DESCRIPTOR_HEAP_SHADER_VISIBLE;
 			desc.NodeMask = 0;
 			ID3D12DescriptorHeap* heap;
 			CHK(mDev->CreateDescriptorHeap(&desc, IID_PPV_ARGS(&heap)));
