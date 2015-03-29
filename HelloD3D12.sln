@@ -9,6 +9,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Shader", "Shader\Shader.vcx
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "VertexBuffer", "VertexBuffer\VertexBuffer.vcxproj", "{154EC394-0563-4872-BC8C-DB2268BDBA13}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Texture", "Texture\Texture.vcxproj", "{42B8D5C1-E772-45B5-91B6-E02EB4FBF862}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x86 = Debug|x86
@@ -27,6 +29,10 @@ Global
 		{154EC394-0563-4872-BC8C-DB2268BDBA13}.Debug|x86.Build.0 = Debug|Win32
 		{154EC394-0563-4872-BC8C-DB2268BDBA13}.Release|x86.ActiveCfg = Release|Win32
 		{154EC394-0563-4872-BC8C-DB2268BDBA13}.Release|x86.Build.0 = Release|Win32
+		{42B8D5C1-E772-45B5-91B6-E02EB4FBF862}.Debug|x86.ActiveCfg = Debug|Win32
+		{42B8D5C1-E772-45B5-91B6-E02EB4FBF862}.Debug|x86.Build.0 = Debug|Win32
+		{42B8D5C1-E772-45B5-91B6-E02EB4FBF862}.Release|x86.ActiveCfg = Release|Win32
+		{42B8D5C1-E772-45B5-91B6-E02EB4FBF862}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -1,6 +1,8 @@
 #include <Windows.h>
 #include <tchar.h>
 #include <wrl/client.h>
+#include <fstream>
+#include <vector>
 #include <stdexcept>
 #include <dxgi1_3.h>
 #include <d3d12.h>
@@ -44,12 +46,11 @@ class D3D
 
 	ComPtr<ID3D12DescriptorHeap> mDescHeapRtv;
 	ComPtr<ID3D12DescriptorHeap> mDescHeapCbvSrvUav;
+	ComPtr<ID3D12DescriptorHeap> mDescHeapSampler;
 
 	ComPtr<ID3D12RootSignature> mRootSignature;
 	ComPtr<ID3D12PipelineState> mPso;
-	ComPtr<ID3D12Resource> mVB;
-	D3D12_VERTEX_BUFFER_VIEW mVBView = {};
-	D3D12_INDEX_BUFFER_VIEW mIBView = {};
+	ComPtr<ID3D12Resource> mTex;
 
 public:
 	D3D(int width, int height, HWND hWnd)
@@ -116,19 +117,36 @@ public:
 			desc.NodeMask = 0;
 			CHK(mDev->CreateDescriptorHeap(&desc, IID_PPV_ARGS(mDescHeapRtv.ReleaseAndGetAddressOf())));
 
-			//desc.Type = D3D12_CBV_SRV_UAV_DESCRIPTOR_HEAP;
-			//desc.NumDescriptors = 100;
-			//desc.Flags = D3D12_DESCRIPTOR_HEAP_SHADER_VISIBLE;
-			//desc.NodeMask = 0;
-			//CHK(mDev->CreateDescriptorHeap(&desc, IID_PPV_ARGS(mDescHeapCbvSrvUav.ReleaseAndGetAddressOf())));
+			desc.Type = D3D12_CBV_SRV_UAV_DESCRIPTOR_HEAP;
+			desc.NumDescriptors = 100;
+			desc.Flags = D3D12_DESCRIPTOR_HEAP_SHADER_VISIBLE;
+			desc.NodeMask = 0;
+			CHK(mDev->CreateDescriptorHeap(&desc, IID_PPV_ARGS(mDescHeapCbvSrvUav.ReleaseAndGetAddressOf())));
+
+			desc.Type = D3D12_SAMPLER_DESCRIPTOR_HEAP;
+			desc.NumDescriptors = 10;
+			desc.Flags = D3D12_DESCRIPTOR_HEAP_SHADER_VISIBLE;
+			desc.NodeMask = 0;
+			CHK(mDev->CreateDescriptorHeap(&desc, IID_PPV_ARGS(mDescHeapSampler.ReleaseAndGetAddressOf())));
 		}
 
 		mDev->CreateRenderTargetView(mD3DBuffer.Get(), nullptr, mDescHeapRtv->GetCPUDescriptorHandleForHeapStart());
 
 		{
+			D3D12_DESCRIPTOR_RANGE descRange1, descRange2;
+			descRange1.Init(D3D12_DESCRIPTOR_RANGE_SRV, 1, 0);
+			descRange2.Init(D3D12_DESCRIPTOR_RANGE_SAMPLER, 1, 0);
+
+			D3D12_ROOT_PARAMETER rootParam[2];
+			rootParam[0].InitAsDescriptorTable(1, &descRange1);
+			rootParam[1].InitAsDescriptorTable(1, &descRange2);
+
 			ID3D10Blob *sig, *info;
 			D3D12_ROOT_SIGNATURE rootSigDesc = D3D12_ROOT_SIGNATURE();
-			rootSigDesc.Flags = D3D12_ROOT_SIGNATURE_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT;
+			rootSigDesc.NumParameters = 2;
+			rootSigDesc.NumStaticSamplers = 0;
+			rootSigDesc.pParameters = rootParam;
+			rootSigDesc.pStaticSamplers = nullptr;
 			CHK(D3D12SerializeRootSignature(&rootSigDesc, D3D_ROOT_SIGNATURE_V1, &sig, &info));
 			mDev->CreateRootSignature(
 				0,
@@ -145,17 +163,12 @@ public:
 #if _DEBUG
 			flag |= D3DCOMPILE_DEBUG;
 #endif /* _DEBUG */
-			CHK(D3DCompileFromFile(L"Default.hlsl", nullptr, nullptr, "VSMain", "vs_5_0", flag, 0, &vs, &info));
-			CHK(D3DCompileFromFile(L"Default.hlsl", nullptr, nullptr, "PSMain", "ps_5_0", flag, 0, &ps, &info));
+			CHK(D3DCompileFromFile(L"Texture.hlsl", nullptr, nullptr, "VSMain", "vs_5_0", flag, 0, &vs, &info));
+			CHK(D3DCompileFromFile(L"Texture.hlsl", nullptr, nullptr, "PSMain", "ps_5_0", flag, 0, &ps, &info));
 		}
-		D3D12_INPUT_ELEMENT_DESC inputLayout[] = {
-			{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D12_INPUT_PER_VERTEX_DATA, 0 }
-		};
 		D3D12_GRAPHICS_PIPELINE_STATE_DESC psoDesc = {};
 		psoDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
-		psoDesc.InputLayout.NumElements = 1;
-		psoDesc.InputLayout.pInputElementDescs = inputLayout;
-		psoDesc.IndexBufferProperties = D3D12_INDEX_BUFFER_STRIP_CUT_VALUE_DISABLED;
+		psoDesc.InputLayout.NumElements = 0;
 		psoDesc.pRootSignature = mRootSignature.Get();
 		psoDesc.VS.pShaderBytecode = vs->GetBufferPointer();
 		psoDesc.VS.BytecodeLength = vs->GetBufferSize();
@@ -173,36 +186,53 @@ public:
 		vs->Release();
 		ps->Release();
 
-		struct float3 {
-			float f[3];
-		};
-		float3 vbData[4] = {
-			{ -0.7f,  0.7f,  0.0f },
-			{  0.7f,  0.7f,  0.0f },
-			{ -0.7f, -0.7f,  0.0f },
-			{  0.7f, -0.7f,  0.0f }
-		};
-		unsigned short ibData[6] = { 0, 1, 2, 2, 1, 3 };
-		CHK(mDev->CreateCommittedResource(
-			&CD3D12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD),
-			D3D12_HEAP_MISC_NONE,
-			&CD3D12_RESOURCE_DESC::Buffer(sizeof(vbData) + sizeof(ibData)),
-			D3D12_RESOURCE_USAGE_GENERIC_READ,
-			nullptr,
-			IID_PPV_ARGS(mVB.ReleaseAndGetAddressOf())));
-		mVB->SetName(L"VertexBuffer");
-		char* vbUploadPtr = nullptr;
-		CHK(mVB->Map(0, nullptr, reinterpret_cast<void**>(&vbUploadPtr)));
-		memcpy_s(vbUploadPtr, sizeof(vbData), vbData, sizeof(vbData));
-		memcpy_s(vbUploadPtr + sizeof(vbData), sizeof(ibData), ibData, sizeof(ibData));
-		mVB->Unmap(0, nullptr);
+		{
+			// Read DDS file
+			vector<char> texData(4 * 256 * 256);
+			ifstream ifs("d3d12.dds", ios::binary);
+			if (!ifs)
+				throw runtime_error("Texture not found.");
+			ifs.seekg(128, ios::beg); // Skip DDS header
+			ifs.read(texData.data(), texData.size());
+			D3D12_RESOURCE_DESC resourceDesc = CD3D12_RESOURCE_DESC::Tex2D(
+				DXGI_FORMAT_B8G8R8A8_UNORM, 256, 256, 1, 1, 1, 0, D3D12_RESOURCE_MISC_NONE,
+				D3D12_TEXTURE_LAYOUT_UNKNOWN, 0);
+			CHK(mDev->CreateCommittedResource(
+				&CD3D12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD),
+				D3D12_HEAP_MISC_NONE,
+				//&CD3D12_RESOURCE_DESC::Buffer(texData.size()),
+				&resourceDesc,
+				D3D12_RESOURCE_USAGE_GENERIC_READ,
+				nullptr,
+				IID_PPV_ARGS(mTex.ReleaseAndGetAddressOf())));
+			mTex->SetName(L"Texure");
+			D3D12_BOX box = {};
+			box.right = 256;
+			box.bottom = 256;
+			box.back = 1;
+			CHK(mTex->WriteToSubresource(0, &box, texData.data(), 4 * 256, 4 * 256 * 256));
+		}
+		D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
+		srvDesc.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
+		srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
+		srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+		srvDesc.Texture2D.MipLevels = 1;
+		srvDesc.Texture2D.MostDetailedMip = 0; // No MIP
+		srvDesc.Texture2D.PlaneSlice = 0;
+		srvDesc.Texture2D.ResourceMinLODClamp = 0.0f;
+		mDev->CreateShaderResourceView(mTex.Get(), &srvDesc, mDescHeapCbvSrvUav->GetCPUDescriptorHandleForHeapStart());
 
-		mVBView.BufferLocation = mVB->GetGPUVirtualAddress();
-		mVBView.StrideInBytes = sizeof(float3);
-		mVBView.SizeInBytes = sizeof(vbData);
-		mIBView.BufferLocation = mVB->GetGPUVirtualAddress() + sizeof(vbData);
-		mIBView.Format = DXGI_FORMAT_R16_UINT;
-		mIBView.SizeInBytes = sizeof(ibData);
+		D3D12_SAMPLER_DESC samplerDesc;
+		samplerDesc.Filter = D3D12_FILTER_MIN_MAG_MIP_LINEAR;
+		samplerDesc.AddressU = D3D12_TEXTURE_ADDRESS_CLAMP;
+		samplerDesc.AddressV = D3D12_TEXTURE_ADDRESS_CLAMP;
+		samplerDesc.AddressW = D3D12_TEXTURE_ADDRESS_CLAMP;
+		samplerDesc.MinLOD = -FLT_MAX;
+		samplerDesc.MaxLOD = FLT_MAX;
+		samplerDesc.MipLODBias = 0;
+		samplerDesc.MaxAnisotropy = 0;
+		samplerDesc.ComparisonFunc = D3D12_COMPARISON_NEVER;
+		mDev->CreateSampler(&samplerDesc, mDescHeapSampler->GetCPUDescriptorHandleForHeapStart());
 	}
 	~D3D()
 	{
@@ -218,9 +248,6 @@ public:
 		CHK(mFence->SetEventOnCompletion(mFrameCount, mFenceEveneHandle));
 
 		D3D12_CPU_DESCRIPTOR_HANDLE descHandleRtv = mDescHeapRtv->GetCPUDescriptorHandleForHeapStart();
-
-		//ID3D12DescriptorHeap* descHeapRtv[] = { mDescHeapCbvSrvUav.Get()/*, mDescHeapRtv.Get()*/ };
-		//mCmdList->SetDescriptorHeaps(descHeapRtv, ARRAYSIZE(descHeapRtv));
 
 		// Barrier Present -> RenderTarget
 		setResourceBarrier(mCmdList.Get(), mD3DBuffer.Get(), D3D12_RESOURCE_USAGE_PRESENT, D3D12_RESOURCE_USAGE_RENDER_TARGET);
@@ -253,11 +280,13 @@ public:
 		// Draw
 		{
 			mCmdList->SetGraphicsRootSignature(mRootSignature.Get());
+			ID3D12DescriptorHeap* descHeaps[] = { mDescHeapCbvSrvUav.Get(), mDescHeapSampler.Get() };
+			mCmdList->SetDescriptorHeaps(descHeaps, ARRAYSIZE(descHeaps));
+			mCmdList->SetGraphicsRootDescriptorTable(0, mDescHeapCbvSrvUav->GetGPUDescriptorHandleForHeapStart());
+			mCmdList->SetGraphicsRootDescriptorTable(1, mDescHeapSampler->GetGPUDescriptorHandleForHeapStart());
 			mCmdList->SetPipelineState(mPso.Get());
-			mCmdList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-			mCmdList->SetVertexBuffers(0, &mVBView, 1);
-			mCmdList->SetIndexBuffer(&mIBView);
-			mCmdList->DrawIndexedInstanced(6, 1, 0, 0, 0);
+			mCmdList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
+			mCmdList->DrawInstanced(4, 1, 0, 0);
 		}
 
 		// Barrier RenderTarget -> Present
