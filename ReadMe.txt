@@ -14,16 +14,24 @@ Sample source codes using Direct3D 12.
 2. Shader
     頂点シェーダとピクセルシェーダで全画面を塗りつぶします。
     Draw the entire window using a vertex shader and pixel shader.
+        (based on 1. Window Present)
 
 3. VertexBuffer
     頂点バッファとインデックスバッファを使って描画します。
     2つのバッファを同じ1つのGPUヒープにまとめて確保します。
     Draw using a vertex buffer and index buffer.
     Allocate one GPU heap and store two buffers.
+        (based on 2. Shader)
 
 4. Texture
     テクスチャを描画します。
     Draw a texture.
+        (based on 2. Shader)
+
+5. ConstantBuffer
+    定数バッファとテクスチャを1つのDescriptorHeapにまとめて描画します。
+    Draw using a constant buffer and texture combined in one descriptor heap.
+        (based on 4. Texture)
 
 
 *** Environment ***
