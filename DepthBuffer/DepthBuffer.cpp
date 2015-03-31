@@ -326,7 +326,7 @@ public:
 		mCmdList->RSSetScissorRects(1, &scissor);
 
 		// Clear DepthTexture
-		mCmdList->ClearDepthStencilView(descHandleDsv, D3D12_CLEAR_DEPTH, 0.7f, 0, nullptr, 0);
+		mCmdList->ClearDepthStencilView(descHandleDsv, D3D12_CLEAR_DEPTH, 1.0f, 0, nullptr, 0);
 
 		// Clear
 		{
