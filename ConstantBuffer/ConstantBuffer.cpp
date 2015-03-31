@@ -52,6 +52,7 @@ class D3D
 	ComPtr<ID3D12PipelineState> mPso;
 	ComPtr<ID3D12Resource> mTex;
 	ComPtr<ID3D12Resource> mCB;
+	void* mCBUploadPtr = nullptr;
 
 public:
 	D3D(int width, int height, HWND hWnd)
@@ -239,20 +240,23 @@ public:
 		CHK(mDev->CreateCommittedResource(
 			&CD3D12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD),
 			D3D12_HEAP_MISC_NONE,
-			&CD3D12_RESOURCE_DESC::Buffer(256), // CB must be 256 byte aligned.
+			&CD3D12_RESOURCE_DESC::Buffer(D3D12_CONSTANT_BUFFER_DATA_PLACEMENT_ALIGNMENT),
 			D3D12_RESOURCE_USAGE_GENERIC_READ,
 			nullptr,
 			IID_PPV_ARGS(mCB.ReleaseAndGetAddressOf())));
 		mCB->SetName(L"ConstantBuffer");
 		D3D12_CONSTANT_BUFFER_VIEW_DESC cbvDesc = {};
 		cbvDesc.BufferLocation = mCB->GetGPUVirtualAddress();
-		cbvDesc.SizeInBytes = 256;
-		D3D12_CPU_DESCRIPTOR_HANDLE a = mDescHeapCbvSrvUav->GetCPUDescriptorHandleForHeapStart();
-		a = a.MakeOffsetted(mDev->GetDescriptorHandleIncrementSize(D3D12_CBV_SRV_UAV_DESCRIPTOR_HEAP));
-		mDev->CreateConstantBufferView(&cbvDesc, a);
+		cbvDesc.SizeInBytes = D3D12_CONSTANT_BUFFER_DATA_PLACEMENT_ALIGNMENT; // must be a multiple of 256
+		mDev->CreateConstantBufferView(
+			&cbvDesc,
+			mDescHeapCbvSrvUav->GetCPUDescriptorHandleForHeapStart()
+				.MakeOffsetted(mDev->GetDescriptorHandleIncrementSize(D3D12_CBV_SRV_UAV_DESCRIPTOR_HEAP)));
+		CHK(mCB->Map(0, nullptr, reinterpret_cast<void**>(&mCBUploadPtr)));
 	}
 	~D3D()
 	{
+		mCB->Unmap(0, nullptr);
 		CloseHandle(mFenceEveneHandle);
 	}
 	ID3D12Device* GetDevice() const
@@ -267,10 +271,8 @@ public:
 			mul -= 0.01f;
 			if (mul <= 0.0f) mul = 1.0f;
 
-			float* cbUploadPtr = nullptr; // Write-Combine memory
-			CHK(mCB->Map(0, nullptr, reinterpret_cast<void**>(&cbUploadPtr)));
-			*cbUploadPtr = mul;
-			mCB->Unmap(0, nullptr);
+			// mCBUploadPtr is Write-Combine memory
+			*reinterpret_cast<float*>(mCBUploadPtr) = mul;
 		}
 
 		// Set queue flushed event
