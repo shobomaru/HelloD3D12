@@ -13,6 +13,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Texture", "Texture\Texture.
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ConstantBuffer", "ConstantBuffer\ConstantBuffer.vcxproj", "{52BA938A-64DD-45DB-A662-92AE4C3EFD6B}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "DepthBuffer", "DepthBuffer\DepthBuffer.vcxproj", "{FA54DE8A-D56F-4BD7-AE5B-12A6C52D0CAE}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x86 = Debug|x86
@@ -39,6 +41,10 @@ Global
 		{52BA938A-64DD-45DB-A662-92AE4C3EFD6B}.Debug|x86.Build.0 = Debug|Win32
 		{52BA938A-64DD-45DB-A662-92AE4C3EFD6B}.Release|x86.ActiveCfg = Release|Win32
 		{52BA938A-64DD-45DB-A662-92AE4C3EFD6B}.Release|x86.Build.0 = Release|Win32
+		{FA54DE8A-D56F-4BD7-AE5B-12A6C52D0CAE}.Debug|x86.ActiveCfg = Debug|Win32
+		{FA54DE8A-D56F-4BD7-AE5B-12A6C52D0CAE}.Debug|x86.Build.0 = Debug|Win32
+		{FA54DE8A-D56F-4BD7-AE5B-12A6C52D0CAE}.Release|x86.ActiveCfg = Release|Win32
+		{FA54DE8A-D56F-4BD7-AE5B-12A6C52D0CAE}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
