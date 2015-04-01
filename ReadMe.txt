@@ -33,6 +33,12 @@ Sample source codes using Direct3D 12.
     Draw using a constant buffer and texture combined in one descriptor heap.
         (based on 4. Texture)
 
+6. DepthBuffer
+    深度バッファに描いたものを表示します。
+    Draw depth buffer and display that.
+        (base on 3. VertexBuffer + 4. Texture)
+
+
 
 *** Environment ***
 
@@ -48,6 +54,7 @@ Visual Studio Tools for Windows 10
 2. Radeon R7 240 (WDDM2.0)
 
 WARPでもHARDWAREでも動きました。
+
 
 
 *** Author ***
