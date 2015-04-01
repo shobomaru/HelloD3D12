@@ -319,6 +319,8 @@ public:
 		D3D12_VIEWPORT viewport = {};
 		viewport.Width = (float)mBufferWidth;
 		viewport.Height = (float)mBufferHeight;
+		viewport.MinDepth = 0.0f;
+		viewport.MaxDepth = 1.0f;
 		mCmdList->RSSetViewports(1, &viewport);
 		D3D12_RECT scissor = {};
 		scissor.right = (LONG)mBufferWidth;
