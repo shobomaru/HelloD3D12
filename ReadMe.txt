@@ -3,6 +3,9 @@
 Direct3D 12を使った簡単なサンプルです。
 Sample source codes using Direct3D 12.
 
+ゆっくりしていってね！！！
+Enjoy!
+
 
 
 *** Projects ***
@@ -36,7 +39,12 @@ Sample source codes using Direct3D 12.
 6. DepthBuffer
     深度バッファに描いたものを表示します。
     Draw depth buffer and display that.
-        (base on 3. VertexBuffer + 4. Texture)
+        (based on 3. VertexBuffer + 4. Texture)
+
+7. Mesh
+    ユタ・ティーポットを描きます。
+    Draw the Utah teapot.
+        (based on 3. VertexBuffer + 5. ConstantBuffer + 6. DepthBuffer)
 
 
 

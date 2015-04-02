@@ -1,0 +1,11 @@
+MIT License (Planning)
+•K—v‚ª‚ ‚ê‚ÎMIT‚É‚·‚é—\’è
+
+
+
+*** External libraries ***
+
+1. DirectXMesh
+    Copyright (c) 2015 Microsoft Corp
+    Released under the MIT license
+    https://directxmesh.codeplex.com/SourceControl/latest#MIT.txt
