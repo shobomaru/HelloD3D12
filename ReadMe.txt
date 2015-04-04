@@ -46,6 +46,12 @@ Enjoy!
     Draw the Utah teapot.
         (based on 3. VertexBuffer + 5. ConstantBuffer + 6. DepthBuffer)
 
+8. TextureOptimize
+    [Underconstruct]
+    ミップマップを適用してテクスチャを描きます。
+    Draw a texture with mipmap.
+        (based on 4. Texture)
+
 
 
 *** Environment ***
