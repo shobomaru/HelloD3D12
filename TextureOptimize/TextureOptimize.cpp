@@ -240,7 +240,7 @@ public:
 				IID_PPV_ARGS(mTex.ReleaseAndGetAddressOf())));
 			mTex->SetName(L"Texure");
 			int copySrcOffset = 0;
-			for (int i = 0u; i < mipSize.size(); ++i)
+			for (auto i = 0u; i < mipSize.size(); ++i)
 			{
 				D3D12_BOX box = {};
 				box.right = get<0>(mipSize[i]);
