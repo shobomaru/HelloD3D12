@@ -70,7 +70,7 @@ public:
 #if _DEBUG
 			CHK(CreateDXGIFactory2(DXGI_CREATE_FACTORY_DEBUG, IID_PPV_ARGS(mDxgiFactory.ReleaseAndGetAddressOf())));
 #else
-			CHK(CreateDXGIFactory2(0, IID_PPV_ARGS(&dxgiFactory2)));
+			CHK(CreateDXGIFactory2(0, IID_PPV_ARGS(mDxgiFactory.ReleaseAndGetAddressOf())));
 #endif /* _DEBUG */
 		}
 
@@ -285,6 +285,8 @@ public:
 	}
 	void Draw()
 	{
+		mFrameCount++;
+
 		// Upload constant buffer
 		{
 			static float rot = 0.0f;
@@ -366,8 +368,6 @@ public:
 		DWORD wait = WaitForSingleObject(mFenceEveneHandle, 10000);
 		if (wait != WAIT_OBJECT_0)
 			throw runtime_error("Failed WaitForSingleObject().");
-
-		mFrameCount++;
 
 		CHK(mCmdAlloc->Reset());
 		CHK(mCmdList->Reset(mCmdAlloc.Get(), nullptr));
