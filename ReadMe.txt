@@ -47,9 +47,9 @@ Enjoy!
         (based on 3. VertexBuffer + 5. ConstantBuffer + 6. DepthBuffer)
 
 8. TextureOptimize
-    [Underconstruct]
-    ミップマップを適用してテクスチャを描きます。
-    Draw a texture with mipmap.
+    [Not worked on Radeon]
+    ミップマップを適用してスウィズル化されたテクスチャを描きます。
+    Draw a swizzled texture with mipmap.
         (based on 4. Texture)
 
 
