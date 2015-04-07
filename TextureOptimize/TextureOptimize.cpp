@@ -52,7 +52,9 @@ class D3D
 
 	ComPtr<ID3D12RootSignature> mRootSignature;
 	ComPtr<ID3D12PipelineState> mPso;
-	ComPtr<ID3D12Resource> mTex;
+	ComPtr<ID3D12Resource> mTexUpload;
+	ComPtr<ID3D12Resource> mTexDefault;
+	vector<tuple<unsigned int, unsigned int>> mTexMipSize;
 
 public:
 	D3D(int width, int height, HWND hWnd)
@@ -188,36 +190,34 @@ public:
 		vs->Release();
 		ps->Release();
 
-		int mipSlice = 1;
 		{
 			// Calcurate Mip
 			unsigned int initialWidth = 256, initialHeight = 256;
 			unsigned int bytePerPixel = 4;
-			vector<tuple<unsigned int, unsigned int>> mipSize;
 			auto maxSize = max(initialHeight, initialWidth);
 			DWORD mipCount;
 			if (maxSize == 1)
 			{
-				mipSize.resize(1);
-				mipSize[0] = make_tuple(1, 1);
+				mTexMipSize.resize(1);
+				mTexMipSize[0] = make_tuple(1, 1);
 			}
 			else
 			{
 				_BitScanReverse(&mipCount, maxSize - 1);
-				mipSize.resize(mipCount + 2);
-				int w = initialWidth, h = initialHeight;
-				mipSize[0] = make_tuple(w, h);
-				for (auto i = 1u; i < mipSize.size(); i++)
+				mTexMipSize.resize(mipCount + 2);
+				int w = initialWidth;
+				int h = initialHeight;
+				mTexMipSize[0] = make_tuple(w, h);
+				for (auto i = 1u; i < mTexMipSize.size(); i++)
 				{
-					mipSize[i] = make_tuple(w /= 2, h /= 2);
+					mTexMipSize[i] = make_tuple(w /= 2, h /= 2);
 				}
 			}
-			mipSlice = mipSize.size();
 
 			// Read DDS File
 			int totalTexSize = 0;
-			for_each(mipSize.cbegin(),
-					mipSize.cend(),
+			for_each(mTexMipSize.cbegin(),
+					mTexMipSize.cend(),
 					[&](auto m) { totalTexSize += get<0>(m) * get<1>(m); });
 			totalTexSize *= bytePerPixel;
 			vector<char> texData(totalTexSize);
@@ -228,7 +228,7 @@ public:
 			ifs.seekg(128, ios::beg); // Skip DDS header
 			ifs.read(texData.data(), texData.size());
 			D3D12_RESOURCE_DESC resourceDesc = CD3D12_RESOURCE_DESC::Tex2D(
-				DXGI_FORMAT_B8G8R8A8_UNORM, initialWidth, initialHeight, 1, (UINT16)mipSlice,
+				DXGI_FORMAT_B8G8R8A8_UNORM, initialWidth, initialHeight, 1, (UINT16)mTexMipSize.size(),
 				1, 0, D3D12_RESOURCE_MISC_NONE,
 				D3D12_TEXTURE_LAYOUT_UNKNOWN, 0);
 			CHK(mDev->CreateCommittedResource(
@@ -237,17 +237,17 @@ public:
 				&resourceDesc,
 				D3D12_RESOURCE_USAGE_GENERIC_READ,
 				nullptr,
-				IID_PPV_ARGS(mTex.ReleaseAndGetAddressOf())));
-			mTex->SetName(L"Texure");
+				IID_PPV_ARGS(mTexUpload.ReleaseAndGetAddressOf())));
+			mTexUpload->SetName(L"Texure");
 			int copySrcOffset = 0;
-			for (auto i = 0u; i < mipSize.size(); ++i)
+			for (auto i = 0u; i < mTexMipSize.size(); ++i)
 			{
 				D3D12_BOX box = {};
-				box.right = get<0>(mipSize[i]);
-				box.bottom = get<1>(mipSize[i]);
+				box.right = get<0>(mTexMipSize[i]);
+				box.bottom = get<1>(mTexMipSize[i]);
 				box.back = 1;
 				int copySrcSize = bytePerPixel * box.right * box.bottom;
-				CHK(mTex->WriteToSubresource(
+				CHK(mTexUpload->WriteToSubresource(
 					i,
 					&box,
 					texData.data() + copySrcOffset,
@@ -256,15 +256,29 @@ public:
 				copySrcOffset += copySrcSize;
 			}
 		}
+
+		{
+			D3D12_RESOURCE_DESC resourceDesc = CD3D12_RESOURCE_DESC::Tex2D(
+				DXGI_FORMAT_B8G8R8A8_UNORM, get<0>(mTexMipSize[0]), get<1>(mTexMipSize[0]), 1, (UINT16)mTexMipSize.size(),
+				1, 0, D3D12_RESOURCE_MISC_NONE,
+				D3D12_TEXTURE_LAYOUT_64KB_UNDEFINED_SWIZZLE, 0); // swizzled texture
+			CHK(mDev->CreateCommittedResource(
+				&CD3D12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
+				D3D12_HEAP_MISC_NONE,
+				&resourceDesc,
+				D3D12_RESOURCE_USAGE_COPY_DEST,
+				nullptr,
+				IID_PPV_ARGS(mTexDefault.ReleaseAndGetAddressOf())));
+		}
 		D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
 		srvDesc.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
 		srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
 		srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
-		srvDesc.Texture2D.MipLevels = mipSlice;
+		srvDesc.Texture2D.MipLevels = mTexMipSize.size();
 		srvDesc.Texture2D.MostDetailedMip = 0;
 		srvDesc.Texture2D.PlaneSlice = 0;
 		srvDesc.Texture2D.ResourceMinLODClamp = 0.0f;
-		mDev->CreateShaderResourceView(mTex.Get(), &srvDesc, mDescHeapCbvSrvUav->GetCPUDescriptorHandleForHeapStart());
+		mDev->CreateShaderResourceView(mTexDefault.Get(), &srvDesc, mDescHeapCbvSrvUav->GetCPUDescriptorHandleForHeapStart());
 
 		D3D12_SAMPLER_DESC samplerDesc;
 		samplerDesc.Filter = D3D12_FILTER_MIN_MAG_MIP_LINEAR;
@@ -294,6 +308,36 @@ public:
 		CHK(mFence->SetEventOnCompletion(mFrameCount, mFenceEveneHandle));
 
 		D3D12_CPU_DESCRIPTOR_HANDLE descHandleRtv = mDescHeapRtv->GetCPUDescriptorHandleForHeapStart();
+
+		// Copy texture from upload heap to default heap
+		if (mFrameCount == 1)
+		{
+			for (auto i = 0u; i < mTexMipSize.size(); i++)
+			{
+				D3D12_TEXTURE_COPY_LOCATION srcLoc = {};
+				srcLoc.pResource = mTexUpload.Get();
+				srcLoc.Subresource = i;
+				srcLoc.Type = D3D12_SUBRESOURCE_VIEW_SELECT_SUBRESOURCE;
+				D3D12_TEXTURE_COPY_LOCATION destLoc = {};
+				destLoc.pResource = mTexDefault.Get();
+				destLoc.Subresource = i;
+				destLoc.Type = D3D12_SUBRESOURCE_VIEW_SELECT_SUBRESOURCE;
+				D3D12_BOX box = {};
+				box.right = get<0>(mTexMipSize[i]);
+				box.bottom = get<1>(mTexMipSize[i]);
+				box.back = 1;
+				mCmdList->CopyTextureRegion(&destLoc, 0, 0, 0, &srcLoc, &box, D3D12_COPY_NONE);
+			}
+
+			setResourceBarrier(mCmdList.Get(), mTexDefault.Get(), D3D12_RESOURCE_USAGE_COPY_DEST, D3D12_RESOURCE_USAGE_PIXEL_SHADER_RESOURCE);
+		}
+
+		// Release intermediate texture
+		// Attention: Texture deleting must do while it is NOT referred by command list, or you will get segfalut or device removing.
+		if (mFrameCount == 2)
+		{
+			mTexUpload.Reset();
+		}
 
 		// Barrier Present -> RenderTarget
 		setResourceBarrier(mCmdList.Get(), mD3DBuffer.Get(), D3D12_RESOURCE_USAGE_PRESENT, D3D12_RESOURCE_USAGE_RENDER_TARGET);

@@ -18,5 +18,5 @@ SamplerState sLinear : register(s0);
 
 float4 PSMain(VSOut vsOut) : SV_TARGET
 {
-	return tBase.SampleLevel(sLinear, vsOut.texcoord, 2);
+	return tBase.SampleLevel(sLinear, vsOut.texcoord, 1.5);
 }
