@@ -50,7 +50,7 @@ class D3D
 
 	ComPtr<ID3D12DescriptorHeap> mDescHeapRtv;
 	ComPtr<ID3D12DescriptorHeap> mDescHeapDsv;
-	ComPtr<ID3D12DescriptorHeap> mDescHeapCbvSrvUav;
+	ComPtr<ID3D12DescriptorHeap> mDescHeapCbvSrvUav[MaxFrameLatency];
 	void* mCBUploadPtr = nullptr;
 
 	ComPtr<ID3D12RootSignature> mRootSignature;
@@ -144,7 +144,10 @@ public:
 			desc.NumDescriptors = 100;
 			desc.Flags = D3D12_DESCRIPTOR_HEAP_SHADER_VISIBLE;
 			desc.NodeMask = 0;
-			CHK(mDev->CreateDescriptorHeap(&desc, IID_PPV_ARGS(mDescHeapCbvSrvUav.ReleaseAndGetAddressOf())));
+			for (auto& c : mDescHeapCbvSrvUav)
+			{
+				CHK(mDev->CreateDescriptorHeap(&desc, IID_PPV_ARGS(c.ReleaseAndGetAddressOf())));
+			}
 		}
 
 		mDev->CreateRenderTargetView(mD3DBuffer.Get(), nullptr, mDescHeapRtv->GetCPUDescriptorHandleForHeapStart());
@@ -265,21 +268,27 @@ public:
 		dsvDesc.Flags = D3D12_DSV_NONE;
 		mDev->CreateDepthStencilView(mDB.Get(), &dsvDesc, mDescHeapDsv->GetCPUDescriptorHandleForHeapStart());
 
+#define CB_SIZE 256
+		UINT cbSize = CB_SIZE;
+		assert((cbSize % D3D12_CONSTANT_BUFFER_DATA_PLACEMENT_ALIGNMENT) == 0);
 		CHK(mDev->CreateCommittedResource(
 			&CD3D12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD),
 			D3D12_HEAP_MISC_NONE,
-			&CD3D12_RESOURCE_DESC::Buffer(D3D12_CONSTANT_BUFFER_DATA_PLACEMENT_ALIGNMENT),
+			&CD3D12_RESOURCE_DESC::Buffer(cbSize * MaxFrameLatency),
 			D3D12_RESOURCE_USAGE_GENERIC_READ,
 			nullptr,
 			IID_PPV_ARGS(mCB.ReleaseAndGetAddressOf())));
 		mCB->SetName(L"ConstantBuffer");
-		D3D12_CONSTANT_BUFFER_VIEW_DESC cbvDesc = {};
-		cbvDesc.BufferLocation = mCB->GetGPUVirtualAddress();
-		cbvDesc.SizeInBytes = D3D12_CONSTANT_BUFFER_DATA_PLACEMENT_ALIGNMENT; // must be a multiple of 256
-		mDev->CreateConstantBufferView(
-			&cbvDesc,
-			mDescHeapCbvSrvUav->GetCPUDescriptorHandleForHeapStart());
-		CHK(mCB->Map(0, nullptr, reinterpret_cast<void**>(&mCBUploadPtr)));
+		for (auto i = 0u; i < MaxFrameLatency; ++i)
+		{
+			D3D12_CONSTANT_BUFFER_VIEW_DESC cbvDesc = {};
+			cbvDesc.BufferLocation = mCB->GetGPUVirtualAddress() + i * cbSize;
+			cbvDesc.SizeInBytes = cbSize;
+			mDev->CreateConstantBufferView(
+				&cbvDesc,
+				mDescHeapCbvSrvUav[i]->GetCPUDescriptorHandleForHeapStart());
+			CHK(mCB->Map(0, nullptr, reinterpret_cast<void**>(&mCBUploadPtr)));
+		}
 	}
 	~D3D()
 	{
@@ -325,8 +334,10 @@ public:
 			auto worldTransMat = XMMatrixTranspose(worldMat);
 
 			// mCBUploadPtr is Write-Combine memory
-			memcpy_s(mCBUploadPtr, 64, &mvpMat, 64);
-			memcpy_s(reinterpret_cast<char*>(mCBUploadPtr) + 64, 64, &worldTransMat, 64);
+			// Shift offset to guarantee that the pointer has not referred by executing command list.
+			char* ptr = reinterpret_cast<char*>(mCBUploadPtr) + CB_SIZE * cmdIndex;
+			memcpy_s(ptr, 64, &mvpMat, 64);
+			memcpy_s(ptr + 64, 64, &worldTransMat, 64);
 		}
 
 		// Set queue flushed event
@@ -363,10 +374,10 @@ public:
 
 		// Draw
 		cmdList->SetGraphicsRootSignature(mRootSignature.Get());
-		ID3D12DescriptorHeap* descHeaps[] = { mDescHeapCbvSrvUav.Get() };
+		ID3D12DescriptorHeap* descHeaps[] = { mDescHeapCbvSrvUav[cmdIndex].Get() };
 		cmdList->SetDescriptorHeaps(descHeaps, ARRAYSIZE(descHeaps));
 		{
-			cmdList->SetGraphicsRootDescriptorTable(0, mDescHeapCbvSrvUav->GetGPUDescriptorHandleForHeapStart());
+			cmdList->SetGraphicsRootDescriptorTable(0, mDescHeapCbvSrvUav[cmdIndex]->GetGPUDescriptorHandleForHeapStart());
 			cmdList->SetPipelineState(mPso.Get());
 			cmdList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 			cmdList->SetVertexBuffers(0, &mVBView, 1);
