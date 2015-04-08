@@ -52,6 +52,10 @@ Enjoy!
     Draw a swizzled texture with mipmap.
         (based on 4. Texture)
 
+9. ParallelFrame
+    コマンドリストを複数使い、フレームの終わりでCPUをストールさせないようにします。
+    Use multiple command lists in order to avoid CPU stall at the end of rendering frame.
+
 
 
 *** Environment ***
