@@ -287,8 +287,8 @@ public:
 			mDev->CreateConstantBufferView(
 				&cbvDesc,
 				mDescHeapCbvSrvUav[i]->GetCPUDescriptorHandleForHeapStart());
-			CHK(mCB->Map(0, nullptr, reinterpret_cast<void**>(&mCBUploadPtr)));
 		}
+		CHK(mCB->Map(0, nullptr, reinterpret_cast<void**>(&mCBUploadPtr)));
 	}
 	~D3D()
 	{
