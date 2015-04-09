@@ -59,6 +59,7 @@ Enjoy!
 
 10. ParallelFrameRootConstant
     RootConstantを使い、毎フレームDescriptorTableの切り替えをしないようにします。
+    Use root constant in order to avoid changing descriptor table every frame.
         (based on 9. ParallelFrame)
 
 
