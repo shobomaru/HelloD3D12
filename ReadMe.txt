@@ -55,6 +55,11 @@ Enjoy!
 9. ParallelFrame
     コマンドリストを複数使い、フレームの終わりでCPUをストールさせないようにします。
     Use multiple command lists in order to avoid CPU stall at the end of rendering frame.
+        (based on 3. Mesh)
+
+10. ParallelFrameRootConstant
+    RootConstantを使い、毎フレームDescriptorTableの切り替えをしないようにします。
+        (based on 9. ParallelFrame)
 
 
 

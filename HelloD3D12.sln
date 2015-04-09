@@ -21,6 +21,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "TextureOptimize", "TextureO
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ParallelFrame", "ParallelFrame\ParallelFrame.vcxproj", "{1DAFD053-C82B-439E-A3F2-58719F72DF79}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ParallelFrameRootConstant", "ParallelFrameRootConstant\ParallelFrameRootConstant.vcxproj", "{4E31ED81-D17C-402C-B109-69C10E224762}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x86 = Debug|x86
@@ -63,6 +65,10 @@ Global
 		{1DAFD053-C82B-439E-A3F2-58719F72DF79}.Debug|x86.Build.0 = Debug|Win32
 		{1DAFD053-C82B-439E-A3F2-58719F72DF79}.Release|x86.ActiveCfg = Release|Win32
 		{1DAFD053-C82B-439E-A3F2-58719F72DF79}.Release|x86.Build.0 = Release|Win32
+		{4E31ED81-D17C-402C-B109-69C10E224762}.Debug|x86.ActiveCfg = Debug|Win32
+		{4E31ED81-D17C-402C-B109-69C10E224762}.Debug|x86.Build.0 = Debug|Win32
+		{4E31ED81-D17C-402C-B109-69C10E224762}.Release|x86.ActiveCfg = Release|Win32
+		{4E31ED81-D17C-402C-B109-69C10E224762}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
