@@ -217,7 +217,7 @@ public:
 		CHK(mDev->CreateCommittedResource(
 			&CD3D12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD),
 			D3D12_HEAP_MISC_NONE,
-			&CD3D12_RESOURCE_DESC::Buffer(sizeof(mVBIndexOffset) + sizeof(IBSize)),
+			&CD3D12_RESOURCE_DESC::Buffer(mVBIndexOffset + IBSize),
 			D3D12_RESOURCE_USAGE_GENERIC_READ,
 			nullptr,
 			IID_PPV_ARGS(mVB.ReleaseAndGetAddressOf())));

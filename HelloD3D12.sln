@@ -23,6 +23,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ParallelFrame", "ParallelFr
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ParallelFrameRootConstant", "ParallelFrameRootConstant\ParallelFrameRootConstant.vcxproj", "{4E31ED81-D17C-402C-B109-69C10E224762}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "MeshTex", "MeshTex\MeshTex.vcxproj", "{6341AE7C-E905-4985-9077-932B2ED6E206}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x86 = Debug|x86
@@ -69,6 +71,10 @@ Global
 		{4E31ED81-D17C-402C-B109-69C10E224762}.Debug|x86.Build.0 = Debug|Win32
 		{4E31ED81-D17C-402C-B109-69C10E224762}.Release|x86.ActiveCfg = Release|Win32
 		{4E31ED81-D17C-402C-B109-69C10E224762}.Release|x86.Build.0 = Release|Win32
+		{6341AE7C-E905-4985-9077-932B2ED6E206}.Debug|x86.ActiveCfg = Debug|Win32
+		{6341AE7C-E905-4985-9077-932B2ED6E206}.Debug|x86.Build.0 = Debug|Win32
+		{6341AE7C-E905-4985-9077-932B2ED6E206}.Release|x86.ActiveCfg = Release|Win32
+		{6341AE7C-E905-4985-9077-932B2ED6E206}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
