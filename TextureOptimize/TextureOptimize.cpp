@@ -54,7 +54,14 @@ class D3D
 	ComPtr<ID3D12PipelineState> mPso;
 	ComPtr<ID3D12Resource> mTexUpload;
 	ComPtr<ID3D12Resource> mTexDefault;
-	vector<tuple<unsigned int, unsigned int>> mTexMipSize;
+	vector<tuple<unsigned int, unsigned int, unsigned int>> mTexMipSize; // <0>width, <1>height, <2>uploadHeapOffset
+
+	unsigned int texAlign(unsigned int s) {
+		return (s + D3D12_TEXTURE_DATA_PLACEMENT_ALIGNMENT - 1u) & ~(D3D12_TEXTURE_DATA_PLACEMENT_ALIGNMENT - 1);
+	};
+	unsigned int pitchAlign(unsigned int w) {
+		return (w + D3D12_TEXTURE_DATA_PITCH_ALIGNMENT - 1u) & ~(D3D12_TEXTURE_DATA_PITCH_ALIGNMENT - 1);
+	};
 
 public:
 	D3D(int width, int height, HWND hWnd)
@@ -194,25 +201,30 @@ public:
 			// Calcurate Mip
 			unsigned int initialWidth = 256, initialHeight = 256;
 			unsigned int bytePerPixel = 4;
-			auto maxSize = max(initialHeight, initialWidth);
+			auto minSize = min(initialHeight, initialWidth);
 			DWORD mipCount;
-			if (maxSize == 1)
+			unsigned int copyDestOffset = 0;
+			unsigned int copyDestTotalSize = 0;
+			if (minSize == 1)
 			{
 				mTexMipSize.resize(1);
-				mTexMipSize[0] = make_tuple(1, 1);
+				mTexMipSize[0] = make_tuple(1, 1, copyDestOffset);
 			}
 			else
 			{
-				_BitScanReverse(&mipCount, maxSize - 1);
+				_BitScanReverse(&mipCount, minSize - 1);
 				mTexMipSize.resize(mipCount + 2);
 				int w = initialWidth;
 				int h = initialHeight;
-				mTexMipSize[0] = make_tuple(w, h);
+				mTexMipSize[0] = make_tuple(w, h, copyDestOffset);
 				for (auto i = 1u; i < mTexMipSize.size(); i++)
 				{
-					mTexMipSize[i] = make_tuple(w /= 2, h /= 2);
+					copyDestOffset += texAlign(pitchAlign(bytePerPixel * w) * h);
+					mTexMipSize[i] = make_tuple(w /= 2, h /= 2, copyDestOffset);
 				}
 			}
+			auto& lastSlice = mTexMipSize[mTexMipSize.size() - 1];
+			copyDestTotalSize = get<2>(lastSlice) + texAlign(pitchAlign(bytePerPixel * get<0>(lastSlice)) * get<1>(lastSlice));
 
 			// Read DDS File
 			int totalTexSize = 0;
@@ -227,10 +239,7 @@ public:
 				throw runtime_error("Texture not found.");
 			ifs.seekg(128, ios::beg); // Skip DDS header
 			ifs.read(texData.data(), texData.size());
-			D3D12_RESOURCE_DESC resourceDesc = CD3D12_RESOURCE_DESC::Tex2D(
-				DXGI_FORMAT_B8G8R8A8_UNORM, initialWidth, initialHeight, 1, (UINT16)mTexMipSize.size(),
-				1, 0, D3D12_RESOURCE_MISC_NONE,
-				D3D12_TEXTURE_LAYOUT_UNKNOWN, 0);
+			D3D12_RESOURCE_DESC resourceDesc = CD3D12_RESOURCE_DESC::Buffer(copyDestTotalSize, D3D12_RESOURCE_MISC_NONE, D3D12_DEFAULT_RESOURCE_PLACEMENT_ALIGNMENT);
 			CHK(mDev->CreateCommittedResource(
 				&CD3D12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD),
 				D3D12_HEAP_MISC_NONE,
@@ -239,22 +248,22 @@ public:
 				nullptr,
 				IID_PPV_ARGS(mTexUpload.ReleaseAndGetAddressOf())));
 			mTexUpload->SetName(L"Texure");
+
 			int copySrcOffset = 0;
+			char *dest;
+			CHK(mTexUpload->Map(0, nullptr, reinterpret_cast<void**>(&dest)));
 			for (auto i = 0u; i < mTexMipSize.size(); ++i)
 			{
-				D3D12_BOX box = {};
-				box.right = get<0>(mTexMipSize[i]);
-				box.bottom = get<1>(mTexMipSize[i]);
-				box.back = 1;
-				int copySrcSize = bytePerPixel * box.right * box.bottom;
-				CHK(mTexUpload->WriteToSubresource(
-					i,
-					&box,
-					texData.data() + copySrcOffset,
-					bytePerPixel * box.right,
-					0));
-				copySrcOffset += copySrcSize;
+				auto curSlice = mTexMipSize[i];
+				for (auto h = 0u; h < get<1>(curSlice); ++h)
+				{
+					auto r = get<2>(curSlice) + pitchAlign(bytePerPixel * get<0>(curSlice)) * h;
+					auto s = bytePerPixel * get<0>(curSlice);
+					memcpy_s(dest + r, s, texData.data() + copySrcOffset, s); // To maximize WC memory writing performance, size should be aligned by 16 byte on x86.
+					copySrcOffset += s;
+				}
 			}
+			mTexUpload->Unmap(0, nullptr);
 		}
 
 		{
@@ -316,8 +325,13 @@ public:
 			{
 				D3D12_TEXTURE_COPY_LOCATION srcLoc = {};
 				srcLoc.pResource = mTexUpload.Get();
-				srcLoc.Subresource = i;
-				srcLoc.Type = D3D12_SUBRESOURCE_VIEW_SELECT_SUBRESOURCE;
+				srcLoc.Type = D3D12_SUBRESOURCE_VIEW_PLACED_PITCHED_SUBRESOURCE;
+				srcLoc.PlacedTexture.Offset = get<2>(mTexMipSize[i]);
+				srcLoc.PlacedTexture.Placement.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
+				srcLoc.PlacedTexture.Placement.Width = get<0>(mTexMipSize[i]);
+				srcLoc.PlacedTexture.Placement.Height = get<1>(mTexMipSize[i]);
+				srcLoc.PlacedTexture.Placement.Depth = 1;
+				srcLoc.PlacedTexture.Placement.RowPitch = pitchAlign(get<0>(mTexMipSize[i]) * 4);
 				D3D12_TEXTURE_COPY_LOCATION destLoc = {};
 				destLoc.pResource = mTexDefault.Get();
 				destLoc.Subresource = i;
