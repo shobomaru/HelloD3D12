@@ -30,6 +30,10 @@ Enjoy!
     テクスチャを描画します。
     Draw a texture.
         (based on 2. Shader)
+4a. TextureOptimize
+    [Not worked on Radeon]
+    ミップマップを適用し、Defaultヒープに転送したテクスチャを描きます。
+    Draw a texture with mipmap transferred to default heap.
 
 5. ConstantBuffer
     定数バッファとテクスチャを1つのDescriptorHeapにまとめて描画します。
@@ -45,19 +49,16 @@ Enjoy!
     ユタ・ティーポットを描きます。
     Draw the Utah teapot.
         (based on 3. VertexBuffer + 5. ConstantBuffer + 6. DepthBuffer)
-
-8. TextureOptimize
-    [Not worked on Radeon]
-    ミップマップを適用してスウィズル化されたテクスチャを描きます。
-    Draw a swizzled texture with mipmap.
+7a. MeshTex
+    テクスチャつきのティープットを描きます。
+    Draw the Utah teapot with a texture.
         (based on 4. Texture)
 
-9. ParallelFrame
+8. ParallelFrame
     コマンドリストを複数使い、フレームの終わりでCPUをストールさせないようにします。
     Use multiple command lists in order to avoid CPU stall at the end of rendering frame.
         (based on 3. Mesh)
-
-10. ParallelFrameRootConstant
+8a. ParallelFrameRootConstant
     RootConstantを使い、毎フレームDescriptorTableの切り替えをしないようにします。
     Use root constant in order to avoid changing descriptor table every frame.
         (based on 9. ParallelFrame)
