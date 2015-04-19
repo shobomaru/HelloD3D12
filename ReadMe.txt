@@ -31,9 +31,10 @@ Enjoy!
     Draw a texture.
         (based on 2. Shader)
 4a. TextureOptimize
-    [Not worked on Radeon]
     ミップマップを適用し、Defaultヒープに転送したテクスチャを描きます。
-    Draw a texture with mipmap transferred to default heap.
+    SampleLevel()で小さいミップレベルを指定しています。
+    Draw a texture with mipmap and transferred to default heap.
+    Set small mip level by SampleLevel().
 
 5. ConstantBuffer
     定数バッファとテクスチャを1つのDescriptorHeapにまとめて描画します。
@@ -50,7 +51,8 @@ Enjoy!
     Draw the Utah teapot.
         (based on 3. VertexBuffer + 5. ConstantBuffer + 6. DepthBuffer)
 7a. MeshTex
-    テクスチャつきのティープットを描きます。
+    テクスチャつきのティーポットを描きます。
+    UVは適当です。
     Draw the Utah teapot with a texture.
         (based on 4. Texture)
 
