@@ -38,13 +38,13 @@ class D3D
 	ComPtr<ID3D12Resource> mD3DBuffer;
 	int mBufferWidth, mBufferHeight;
 	UINT64 mFrameCount = 0;
-	static const UINT MaxFrameLatency = 3; // Maybe equivant to IDXGIDevice1::GetMaximumFrameLatency()
+	static const UINT MaxFrameLatency = 2;
 
 	ID3D12Device* mDev;
 	ComPtr<ID3D12CommandAllocator> mCmdAlloc[MaxFrameLatency];
 	ComPtr<ID3D12CommandQueue> mCmdQueue;
 
-	ComPtr<ID3D12GraphicsCommandList> mCmdList[MaxFrameLatency];
+	ComPtr<ID3D12GraphicsCommandList> mCmdList;
 	ComPtr<ID3D12Fence> mFence;
 	HANDLE mFenceEveneHandle = 0;
 
@@ -109,15 +109,13 @@ public:
 		scDesc.SwapEffect = DXGI_SWAP_EFFECT_DISCARD;
 		CHK(mDxgiFactory->CreateSwapChainForHwnd(mCmdQueue.Get(), hWnd, &scDesc, nullptr, nullptr, mSwapChain.ReleaseAndGetAddressOf()));
 
-		for (auto i = 0u; i < MaxFrameLatency; i++)
-		{
-			CHK(mDev->CreateCommandList(
-				0,
-				D3D12_COMMAND_LIST_TYPE_DIRECT,
-				mCmdAlloc[i].Get(),
-				nullptr,
-				IID_PPV_ARGS(mCmdList[i].ReleaseAndGetAddressOf())));
-		}
+		CHK(mDev->CreateCommandList(
+			0,
+			D3D12_COMMAND_LIST_TYPE_DIRECT,
+			mCmdAlloc[0].Get(),
+			nullptr,
+			IID_PPV_ARGS(mCmdList.ReleaseAndGetAddressOf())));
+		mCmdList->Close();
 
 		CHK(mDev->CreateFence(0, D3D12_FENCE_MISC_NONE, IID_PPV_ARGS(mFence.ReleaseAndGetAddressOf())));
 
@@ -298,7 +296,7 @@ public:
 
 		int cmdIndex = mFrameCount % MaxFrameLatency;
 		auto* cmdQueue = mCmdQueue.Get();
-		auto* cmdList = mCmdList[cmdIndex].Get();
+		auto* cmdList = mCmdList.Get();
 
 		// Wait untill next queue be freed
 		if (mFrameCount > MaxFrameLatency)
@@ -309,8 +307,9 @@ public:
 				throw runtime_error("Failed WaitForSingleObject().");
 
 			CHK(mCmdAlloc[cmdIndex]->Reset());
-			CHK(cmdList->Reset(mCmdAlloc[cmdIndex].Get(), nullptr));
 		}
+
+		CHK(cmdList->Reset(mCmdAlloc[cmdIndex].Get(), nullptr));
 
 		// Upload constant buffer
 		{

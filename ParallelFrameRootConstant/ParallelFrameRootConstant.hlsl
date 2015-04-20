@@ -10,7 +10,7 @@ struct VSOut
 	float3 normal : NORMAL;
 };
 
-#define MaxFrameLatency (3)
+#define MaxFrameLatency (2)
 
 cbuffer SceneParam
 {

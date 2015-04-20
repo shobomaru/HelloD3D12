@@ -38,7 +38,7 @@ class D3D
 	ComPtr<ID3D12Resource> mD3DBuffer;
 	int mBufferWidth, mBufferHeight;
 	UINT64 mFrameCount = 0;
-	static const UINT MaxFrameLatency = 2; // Maybe equivant to IDXGIDevice1::GetMaximumFrameLatency()
+	static const UINT MaxFrameLatency = 2;
 
 	ID3D12Device* mDev;
 	ComPtr<ID3D12CommandAllocator> mCmdAlloc[MaxFrameLatency];
