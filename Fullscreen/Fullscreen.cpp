@@ -34,6 +34,11 @@ class D3D
 	int mBufferWidth, mBufferHeight;
 	UINT64 mFrameCount = 0;
 
+	BOOL mBackBufferResized = false;
+	BOOL mIsFullscreen = false;
+	int mWindowWidth, mWindowHeight;
+	int mFullscreenWidth, mFullscreenHeight;
+
 	ID3D12Device* mDev;
 	ComPtr<ID3D12CommandAllocator> mCmdAlloc;
 	ComPtr<ID3D12CommandQueue> mCmdQueue;
@@ -50,7 +55,7 @@ class D3D
 
 public:
 	D3D(int width, int height, HWND hWnd)
-		: mBufferWidth(width), mBufferHeight(height), mDev(nullptr)
+		: mBufferWidth(width), mBufferHeight(height), mWindowWidth(width), mWindowHeight(height), mDev(nullptr)
 	{
 		{
 #if _DEBUG
@@ -67,10 +72,10 @@ public:
 		ID3D12Device* dev;
 		CHK(D3D12CreateDevice(
 			nullptr,
-			D3D_DRIVER_TYPE_WARP,
-			//D3D_DRIVER_TYPE_HARDWARE,
+			//D3D_DRIVER_TYPE_WARP, // Cannot switch to fullscreen mode on warp driver
+			D3D_DRIVER_TYPE_HARDWARE,
 			createFlag,
-			D3D_FEATURE_LEVEL_11_1,
+			D3D_FEATURE_LEVEL_11_0,
 			D3D12_SDK_VERSION,
 			IID_PPV_ARGS(&dev)));
 		mDev = dev;
@@ -89,6 +94,7 @@ public:
 		scDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
 		scDesc.BufferCount = 1;
 		scDesc.SwapEffect = DXGI_SWAP_EFFECT_DISCARD;
+		scDesc.Flags = DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH;
 		CHK(mDxgiFactory->CreateSwapChainForHwnd(mCmdQueue.Get(), hWnd, &scDesc, nullptr, nullptr, mSwapChain.ReleaseAndGetAddressOf()));
 
 		CHK(mDev->CreateCommandList(
@@ -112,12 +118,6 @@ public:
 			//desc.Flags = D3D12_DESCRIPTOR_HEAP_SHADER_VISIBLE;
 			desc.NodeMask = 0;
 			CHK(mDev->CreateDescriptorHeap(&desc, IID_PPV_ARGS(mDescHeapRtv.ReleaseAndGetAddressOf())));
-
-			//desc.Type = D3D12_CBV_SRV_UAV_DESCRIPTOR_HEAP;
-			//desc.NumDescriptors = 100;
-			//desc.Flags = D3D12_DESCRIPTOR_HEAP_SHADER_VISIBLE;
-			//desc.NodeMask = 0;
-			//CHK(mDev->CreateDescriptorHeap(&desc, IID_PPV_ARGS(mDescHeapCbvSrvUav.ReleaseAndGetAddressOf())));
 		}
 
 		mDev->CreateRenderTargetView(mD3DBuffer.Get(), nullptr, mDescHeapRtv->GetCPUDescriptorHandleForHeapStart());
@@ -141,8 +141,8 @@ public:
 #if _DEBUG
 			flag |= D3DCOMPILE_DEBUG;
 #endif /* _DEBUG */
-			CHK(D3DCompileFromFile(L"Shader.hlsl", nullptr, nullptr, "VSMain", "vs_5_0", flag, 0, &vs, &info));
-			CHK(D3DCompileFromFile(L"Shader.hlsl", nullptr, nullptr, "PSMain", "ps_5_0", flag, 0, &ps, &info));
+			CHK(D3DCompileFromFile(L"FullScreen.hlsl", nullptr, nullptr, "VSMain", "vs_5_0", flag, 0, &vs, &info));
+			CHK(D3DCompileFromFile(L"FullScreen.hlsl", nullptr, nullptr, "PSMain", "ps_5_0", flag, 0, &ps, &info));
 		}
 		D3D12_GRAPHICS_PIPELINE_STATE_DESC psoDesc = {};
 		psoDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
@@ -167,6 +167,13 @@ public:
 	~D3D()
 	{
 		CloseHandle(mFenceEveneHandle);
+
+		BOOL isFullscreen;
+		CHK(mSwapChain->GetFullscreenState(&isFullscreen, nullptr));
+		if (isFullscreen)
+		{
+			CHK(mSwapChain->SetFullscreenState(FALSE, nullptr));
+		}
 	}
 	ID3D12Device* GetDevice() const
 	{
@@ -175,6 +182,36 @@ public:
 	void Draw()
 	{
 		mFrameCount++;
+
+		// test
+		if (mFrameCount == 10)
+		{
+			CHK(mSwapChain->SetFullscreenState(TRUE, nullptr));
+		}
+		if (mFrameCount == 80)
+		{
+			CHK(mSwapChain->SetFullscreenState(FALSE, nullptr));
+		}
+
+		// Check window state
+		BOOL isFullscreen;
+		CHK(mSwapChain->GetFullscreenState(&isFullscreen, nullptr));
+
+		// If state was changed, regenerate resources
+		if (mIsFullscreen != isFullscreen)
+		{
+			mIsFullscreen = isFullscreen;
+
+			CHK(mSwapChain->GetBuffer(0, IID_PPV_ARGS(mD3DBuffer.ReleaseAndGetAddressOf())));
+			mD3DBuffer->SetName(L"SwapChain_Buffer");
+
+			auto desc = mD3DBuffer->GetDesc();
+			mBufferWidth = (int)desc.Width;
+			mBufferHeight = (int)desc.Height;
+
+			mDev->CreateRenderTargetView(mD3DBuffer.Get(), nullptr, mDescHeapRtv->GetCPUDescriptorHandleForHeapStart());
+		}
+
 
 		// Set queue flushed event
 		CHK(mFence->SetEventOnCompletion(mFrameCount, mFenceEveneHandle));
@@ -343,6 +380,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 			}
 			else {
 				DispatchMessage(&msg);
+				// Press Alt+Enter, and the window will be changed fullscreen state.
 			}
 		}
 	}
