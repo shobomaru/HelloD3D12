@@ -5,6 +5,7 @@
 #include <dxgi1_3.h>
 #include <d3d12.h>
 #include <d3dcompiler.h>
+#include <sstream>
 
 #pragma comment(lib, "dxgi.lib")
 #pragma comment(lib, "d3d12.lib")
@@ -34,10 +35,7 @@ class D3D
 	int mBufferWidth, mBufferHeight;
 	UINT64 mFrameCount = 0;
 
-	BOOL mBackBufferResized = false;
 	BOOL mIsFullscreen = false;
-	int mWindowWidth, mWindowHeight;
-	int mFullscreenWidth, mFullscreenHeight;
 
 	ID3D12Device* mDev;
 	ComPtr<ID3D12CommandAllocator> mCmdAlloc;
@@ -55,7 +53,7 @@ class D3D
 
 public:
 	D3D(int width, int height, HWND hWnd)
-		: mBufferWidth(width), mBufferHeight(height), mWindowWidth(width), mWindowHeight(height), mDev(nullptr)
+		: mBufferWidth(width), mBufferHeight(height), mDev(nullptr)
 	{
 		{
 #if _DEBUG
@@ -188,7 +186,7 @@ public:
 		{
 			CHK(mSwapChain->SetFullscreenState(TRUE, nullptr));
 		}
-		if (mFrameCount == 80)
+		if (mFrameCount == 120)
 		{
 			CHK(mSwapChain->SetFullscreenState(FALSE, nullptr));
 		}
@@ -202,12 +200,26 @@ public:
 		{
 			mIsFullscreen = isFullscreen;
 
+			RECT rect;
+			GetClientRect(GetActiveWindow(), &rect);
+			DXGI_MODE_DESC mode = {};
+			mode.Format = DXGI_FORMAT_UNKNOWN;
+			mode.Width = rect.right;
+			mode.Height = rect.bottom;
+			mode.RefreshRate.Denominator = 1;
+			mode.RefreshRate.Numerator = 60; // FIXME
+			mD3DBuffer.Reset();
+			CHK(mSwapChain->ResizeTarget(&mode));
+			CHK(mSwapChain->ResizeBuffers(1, 0, 0, DXGI_FORMAT_R8G8B8A8_UNORM, DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH));
 			CHK(mSwapChain->GetBuffer(0, IID_PPV_ARGS(mD3DBuffer.ReleaseAndGetAddressOf())));
 			mD3DBuffer->SetName(L"SwapChain_Buffer");
 
 			auto desc = mD3DBuffer->GetDesc();
 			mBufferWidth = (int)desc.Width;
 			mBufferHeight = (int)desc.Height;
+			stringstream ss;
+			ss << "#SwapChain size changed (" << mBufferWidth << "," << mBufferHeight << ")" << endl;
+			OutputDebugStringA(ss.str().c_str());
 
 			mDev->CreateRenderTargetView(mD3DBuffer.Get(), nullptr, mDescHeapRtv->GetCPUDescriptorHandleForHeapStart());
 		}
