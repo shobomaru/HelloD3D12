@@ -27,6 +27,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "MeshTex", "MeshTex\MeshTex.
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Fullscreen", "Fullscreen\Fullscreen.vcxproj", "{622B8C36-52D2-483C-837C-B843840BD141}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "MeshTexBundle", "MeshTexBundle\MeshTexBundle.vcxproj", "{BE53B7D7-CF94-4BD4-B7A7-32B0A9209D84}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x86 = Debug|x86
@@ -81,6 +83,10 @@ Global
 		{622B8C36-52D2-483C-837C-B843840BD141}.Debug|x86.Build.0 = Debug|Win32
 		{622B8C36-52D2-483C-837C-B843840BD141}.Release|x86.ActiveCfg = Release|Win32
 		{622B8C36-52D2-483C-837C-B843840BD141}.Release|x86.Build.0 = Release|Win32
+		{BE53B7D7-CF94-4BD4-B7A7-32B0A9209D84}.Debug|x86.ActiveCfg = Debug|Win32
+		{BE53B7D7-CF94-4BD4-B7A7-32B0A9209D84}.Debug|x86.Build.0 = Debug|Win32
+		{BE53B7D7-CF94-4BD4-B7A7-32B0A9209D84}.Release|x86.ActiveCfg = Release|Win32
+		{BE53B7D7-CF94-4BD4-B7A7-32B0A9209D84}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

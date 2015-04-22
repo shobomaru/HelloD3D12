@@ -18,6 +18,9 @@ Enjoy!
     頂点シェーダとピクセルシェーダで全画面を塗りつぶします。
     Draw the entire window using a vertex shader and pixel shader.
         (based on 1. Window Present)
+2a. Fullscreen
+    全画面に切り替えます。
+    Switch fullscreen mode.
 
 3. VertexBuffer
     頂点バッファとインデックスバッファを使って描画します。
@@ -55,6 +58,9 @@ Enjoy!
     UVは適当です。
     Draw the Utah teapot with a texture.
         (based on 4. Texture)
+7b. MeshTexBundle
+    バンドルを使って描画します。
+    Draw using Bundle.
 
 8. ParallelFrame
     コマンドリストを複数使い、フレームの終わりでCPUをストールさせないようにします。
