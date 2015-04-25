@@ -69,8 +69,11 @@ Enjoy!
 8a. ParallelFrameRootConstant
     RootConstantを使い、毎フレームDescriptorTableの切り替えをしないようにします。
     Use root constant in order to avoid changing descriptor table every frame.
-        (based on 9. ParallelFrame)
 
+9. Multithread
+    マルチスレッドでコマンドリストを構築します。
+    Build command lists with multithreaded.
+        (based on 8. ParallelFrame).
 
 
 *** Environment ***
