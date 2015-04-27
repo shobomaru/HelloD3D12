@@ -73,7 +73,12 @@ Enjoy!
 9. Multithread
     マルチスレッドでコマンドリストを構築します。
     Build command lists with multithreaded.
-        (based on 8. ParallelFrame).
+        (based on 8. ParallelFrame)
+
+10. ExecuteIndirect
+    一部のパラメータとドローコールの引数をVRAMに書き込み、バッチを間接的に実行します。
+    Write a part of parameters and arguments of drawcall, and execute batches indirectly.
+        (based on 8.ParallelFrame)
 
 
 *** Environment ***

@@ -308,7 +308,7 @@ public:
 			param[0].ConstantBufferView.RootParameterIndex = 0;
 			param[1].Type = D3D12_INDIRECT_PARAMETER_DRAW_INDEXED; // Bytes 8:27
 			D3D12_COMMAND_SIGNATURE cmdSignatureDesc = {};
-			cmdSignatureDesc.ByteStride = 28;
+			cmdSignatureDesc.ByteStride = 32; // aligned by 8 because Root CBV address is 8 byte.
 			cmdSignatureDesc.ParameterCount = ARRAYSIZE(param);
 			cmdSignatureDesc.pParameters = param;
 			CHK(mDev->CreateCommandSignature(&cmdSignatureDesc, mRootSignature.Get(), IID_PPV_ARGS(mCmdSignature.ReleaseAndGetAddressOf())));
@@ -399,27 +399,27 @@ public:
 			for (auto tid = 0u; tid < mInstanceCount; tid++)
 			{
 				// set parameters on upload heap
-				UINT* ptr = reinterpret_cast<UINT*>(mIndirectCmdBufUploadPtr) + mIndirectCmdBufStride * (cmdIndex * mInstanceCount + tid);
+				char* ptr = reinterpret_cast<char*>(mIndirectCmdBufUploadPtr) + mIndirectCmdBufStride * (cmdIndex * mInstanceCount + tid);
+				UINT* ptrU = reinterpret_cast<UINT*>(ptr);
 
 				// Bytes 0:7 - D3D12_INDIRECT_PARAMETER_CONSTANT_BUFFER_VIEW
-				*reinterpret_cast<D3D12_GPU_VIRTUAL_ADDRESS*>(ptr)
+				*reinterpret_cast<D3D12_GPU_VIRTUAL_ADDRESS*>(ptrU)
 					= mCB->GetGPUVirtualAddress() + CB_ALIGNED_SIZE * (cmdIndex * mInstanceCount + tid);
 				// Bytes 8:27 - D3D12_INDIRECT_PARAMETER_DRAW_INDEXED
-				ptr[2] = mIndexCount;
-				ptr[3] = 1;
-				ptr[4] = 0;
-				ptr[5] = 0;
-				ptr[6] = 0;
+				ptrU[2] = mIndexCount;
+				ptrU[3] = 1;
+				ptrU[4] = 0;
+				ptrU[5] = 0;
+				ptrU[6] = 0;
 			}
 
 			// copy parameters to default heap
-			//cmdList->CopyBufferRegion(mIndirectCmdBufOnDefaultHeap.Get(),
-			//							mIndirectCmdBufStride * mInstanceCount * cmdIndex,
-			//							mIndirectCmdBuf.Get(),
-			//							mIndirectCmdBufStride * mInstanceCount * cmdIndex,
-			//							mIndirectCmdBufStride * mInstanceCount,
-			//							D3D12_COPY_NONE);
-			cmdList->CopyResource(mIndirectCmdBufOnDefaultHeap.Get(), mIndirectCmdBuf.Get());
+			cmdList->CopyBufferRegion(mIndirectCmdBufOnDefaultHeap.Get(),
+										mIndirectCmdBufStride * mInstanceCount * cmdIndex,
+										mIndirectCmdBuf.Get(),
+										mIndirectCmdBufStride * mInstanceCount * cmdIndex,
+										mIndirectCmdBufStride * mInstanceCount,
+										D3D12_COPY_NONE);
 
 			// transition
 			setResourceBarrier(cmdList, mIndirectCmdBufOnDefaultHeap.Get(), D3D12_RESOURCE_USAGE_COPY_DEST, D3D12_RESOURCE_USAGE_INDIRECT_ARGUMENT);
@@ -460,6 +460,7 @@ public:
 		auto cbvDescHeapIncSize = mDev->GetDescriptorHandleIncrementSize(D3D12_CBV_SRV_UAV_DESCRIPTOR_HEAP);
 
 #if 0
+		// Draw direct
 		for (auto tid = 0u; tid < mInstanceCount; tid++)
 		{
 			// Draw
