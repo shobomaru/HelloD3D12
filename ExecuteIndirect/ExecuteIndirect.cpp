@@ -396,10 +396,11 @@ public:
 			// transition
 			setResourceBarrier(cmdList, mIndirectCmdBufOnDefaultHeap.Get(), D3D12_RESOURCE_USAGE_INDIRECT_ARGUMENT, D3D12_RESOURCE_USAGE_COPY_DEST);
 
-			// set parameters on upload heap
-			UINT* ptr = reinterpret_cast<UINT*>(mIndirectCmdBufUploadPtr) + mIndirectCmdBufStride * (cmdIndex * mInstanceCount);
 			for (auto tid = 0u; tid < mInstanceCount; tid++)
 			{
+				// set parameters on upload heap
+				UINT* ptr = reinterpret_cast<UINT*>(mIndirectCmdBufUploadPtr) + mIndirectCmdBufStride * (cmdIndex * mInstanceCount + tid);
+
 				// Bytes 0:7 - D3D12_INDIRECT_PARAMETER_CONSTANT_BUFFER_VIEW
 				*reinterpret_cast<D3D12_GPU_VIRTUAL_ADDRESS*>(ptr)
 					= mCB->GetGPUVirtualAddress() + CB_ALIGNED_SIZE * (cmdIndex * mInstanceCount + tid);
@@ -484,12 +485,15 @@ public:
 		cmdList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 		cmdList->SetVertexBuffers(0, &mVBView, 1);
 		cmdList->SetIndexBuffer(&mIBView);
-		cmdList->ExecuteIndirect(mCmdSignature.Get(),
-									1,
-									mIndirectCmdBufOnDefaultHeap.Get(),
-									mIndirectCmdBufStride * mInstanceCount * cmdIndex,
-									nullptr,
-									0);
+		for (auto i = 0u; i < mInstanceCount; i++)
+		{
+			cmdList->ExecuteIndirect(mCmdSignature.Get(),
+				1,
+				mIndirectCmdBufOnDefaultHeap.Get(),
+				mIndirectCmdBufStride * (mInstanceCount * cmdIndex + i),
+				nullptr,
+				0);
+		}
 #endif
 
 		// Barrier RenderTarget -> Present
