@@ -19,6 +19,7 @@ Enjoy!
     Draw the entire window using a vertex shader and pixel shader.
         (based on 1. Window Present)
 2a. Fullscreen
+    [Not worked on Radeon (Acccess violation).]
     全画面に切り替えます。
     Switch fullscreen mode.
 
@@ -76,6 +77,7 @@ Enjoy!
         (based on 8. ParallelFrame)
 
 10. ExecuteIndirect
+    [Not worked on Radeon (Removing device).]
     一部のパラメータとドローコールの引数をVRAMに書き込み、バッチを間接的に実行します。
     Write a part of parameters and arguments of drawcall, and execute batches indirectly.
         (based on 8.ParallelFrame)
