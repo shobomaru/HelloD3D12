@@ -174,10 +174,19 @@ public:
 
 		// Wait for queue flushed
 		// CPU stall occured!
+#if 1
 		CHK(mCmdQueue->Signal(mFence.Get(), mFrameCount));
 		DWORD wait = WaitForSingleObject(mFenceEveneHandle, 10000);
 		if (wait != WAIT_OBJECT_0)
 			throw runtime_error("Failed WaitForSingleObject().");
+#else
+		// Equivalent code
+		auto prev = mFence->GetCompletedValue();
+		CHK(mCmdQueue->Signal(mFence.Get(), mFrameCount));
+		while (prev == mFence->GetCompletedValue())
+		{
+		}
+#endif
 
 		CHK(mCmdAlloc->Reset());
 		CHK(mCmdList->Reset(mCmdAlloc.Get(), nullptr));
