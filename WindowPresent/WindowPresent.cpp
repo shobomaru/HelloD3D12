@@ -57,18 +57,20 @@ public:
 #endif /* _DEBUG */
 		}
 
-		D3D12_CREATE_DEVICE_FLAG createFlag = D3D12_CREATE_DEVICE_NONE;
 #if _DEBUG
-		createFlag = D3D12_CREATE_DEVICE_DEBUG;
+		ID3D12Debug* debug = nullptr;
+		D3D12GetDebugInterface(IID_PPV_ARGS(&debug));
+		if (debug)
+		{
+			debug->EnableDebugLayer();
+			debug->Release();
+			debug = nullptr;
+		}
 #endif /* _DEBUG */
 		ID3D12Device* dev;
 		CHK(D3D12CreateDevice(
 			nullptr,
-			D3D_DRIVER_TYPE_WARP,
-			//D3D_DRIVER_TYPE_HARDWARE,
-			createFlag,
 			D3D_FEATURE_LEVEL_11_1,
-			D3D12_SDK_VERSION,
 			IID_PPV_ARGS(&dev)));
 		mDev = dev;
 
@@ -84,8 +86,8 @@ public:
 		scDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
 		scDesc.SampleDesc.Count = 1;
 		scDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
-		scDesc.BufferCount = 1;
-		scDesc.SwapEffect = DXGI_SWAP_EFFECT_DISCARD;
+		scDesc.BufferCount = 2;
+		scDesc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_SEQUENTIAL;
 		CHK(mDxgiFactory->CreateSwapChainForHwnd(mCmdQueue.Get(), hWnd, &scDesc, nullptr, nullptr, mSwapChain.ReleaseAndGetAddressOf()));
 
 		CHK(mDev->CreateCommandList(
@@ -95,7 +97,7 @@ public:
 			nullptr,
 			IID_PPV_ARGS(mCmdList.ReleaseAndGetAddressOf())));
 
-		CHK(mDev->CreateFence(0, D3D12_FENCE_MISC_NONE, IID_PPV_ARGS(mFence.ReleaseAndGetAddressOf())));
+		CHK(mDev->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(mFence.ReleaseAndGetAddressOf())));
 
 		mFenceEveneHandle = CreateEvent(nullptr, FALSE, FALSE, nullptr);
 
@@ -104,7 +106,7 @@ public:
 
 		{
 			D3D12_DESCRIPTOR_HEAP_DESC desc = {};
-			desc.Type = D3D12_RTV_DESCRIPTOR_HEAP;
+			desc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
 			desc.NumDescriptors = 10;
 			//desc.Flags = D3D12_DESCRIPTOR_HEAP_SHADER_VISIBLE;
 			desc.NodeMask = 0;
@@ -140,7 +142,7 @@ public:
 		//mCmdList->SetDescriptorHeaps(descHeapRtv, ARRAYSIZE(descHeapRtv));
 
 		// Barrier Present -> RenderTarget
-		setResourceBarrier(mCmdList.Get(), mD3DBuffer.Get(), D3D12_RESOURCE_USAGE_PRESENT, D3D12_RESOURCE_USAGE_RENDER_TARGET);
+		setResourceBarrier(mCmdList.Get(), mD3DBuffer.Get(), D3D12_RESOURCE_STATE_PRESENT, D3D12_RESOURCE_STATE_RENDER_TARGET);
 
 		// Viewport
 		D3D12_VIEWPORT viewport = {};
@@ -158,11 +160,11 @@ public:
 			clearColor[0] = saturate(std::abs(h * 6.0f - 3.0f) - 1.0f);
 			clearColor[1] = saturate(2.0f - std::abs(h * 6.0f - 2.0f));
 			clearColor[2] = saturate(2.0f - std::abs(h * 6.0f - 4.0f));
-			mCmdList->ClearRenderTargetView(descHandleRtv, clearColor, nullptr, 0);
+			mCmdList->ClearRenderTargetView(descHandleRtv, clearColor, 0, nullptr);
 		}
 
 		// Barrier RenderTarget -> Present
-		setResourceBarrier(mCmdList.Get(), mD3DBuffer.Get(), D3D12_RESOURCE_USAGE_RENDER_TARGET, D3D12_RESOURCE_USAGE_PRESENT);
+		setResourceBarrier(mCmdList.Get(), mD3DBuffer.Get(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PRESENT);
 
 		// Exec
 		CHK(mCmdList->Close());
@@ -193,15 +195,18 @@ public:
 	}
 	
 private:
-	void setResourceBarrier(ID3D12GraphicsCommandList* commandList, ID3D12Resource* res, UINT before, UINT after)
+	void setResourceBarrier(ID3D12GraphicsCommandList* commandList,
+							ID3D12Resource* res,
+							D3D12_RESOURCE_STATES before,
+							D3D12_RESOURCE_STATES after)
 	{
-		D3D12_RESOURCE_BARRIER_DESC desc = {};
+		D3D12_RESOURCE_BARRIER desc = {};
 		desc.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
 		desc.Transition.pResource = res;
 		desc.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
 		desc.Transition.StateBefore = before;
 		desc.Transition.StateAfter = after;
-		desc.Transition.Flags = D3D12_RESOURCE_TRANSITION_BARRIER_NONE;
+		desc.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
 		commandList->ResourceBarrier(1, &desc);
 	}
 };
