@@ -126,13 +126,6 @@ public:
 			auto d = mDescHeapRtv->GetCPUDescriptorHandleForHeapStart();
 			d.ptr += i * rtvStep;
 			mDev->CreateRenderTargetView(mD3DBuffer[i].Get(), nullptr, d);
-			//D3D12_RENDER_TARGET_VIEW_DESC rtv = {};
-			//auto buf = mD3DBuffer[i]->GetDesc();
-			//rtv.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2D;
-			//rtv.Format = buf.Format;
-			//auto d = mDescHeapRtv->GetCPUDescriptorHandleForHeapStart();
-			//d.ptr += i * rtvStep;
-			//mDev->CreateRenderTargetView(mD3DBuffer[i].Get(), &rtv, d);
 		}
 
 		{
@@ -165,7 +158,7 @@ public:
 		psoDesc.VS.BytecodeLength = vs->GetBufferSize();
 		psoDesc.PS.pShaderBytecode = ps->GetBufferPointer();
 		psoDesc.PS.BytecodeLength = ps->GetBufferSize();
-		psoDesc.RasterizerState.CullMode = D3D12_CULL_MODE_NONE;
+		psoDesc.RasterizerState.CullMode = D3D12_CULL_MODE_BACK;
 		psoDesc.RasterizerState.FillMode = D3D12_FILL_MODE_SOLID;
 		psoDesc.BlendState.RenderTarget[0].RenderTargetWriteMask = D3D12_COLOR_WRITE_ENABLE_ALL;
 		psoDesc.RasterizerState.DepthClipEnable = true;
