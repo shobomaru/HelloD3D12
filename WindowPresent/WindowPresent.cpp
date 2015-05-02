@@ -104,7 +104,7 @@ public:
 
 		for (int i = 0; i < BUFFER_COUNT; i++)
 		{
-			CHK(mSwapChain->GetBuffer(0, IID_PPV_ARGS(mD3DBuffer[i].ReleaseAndGetAddressOf())));
+			CHK(mSwapChain->GetBuffer(i, IID_PPV_ARGS(mD3DBuffer[i].ReleaseAndGetAddressOf())));
 			mD3DBuffer[i]->SetName(L"SwapChain_Buffer");
 		}
 
@@ -115,12 +115,6 @@ public:
 			//desc.Flags = D3D12_DESCRIPTOR_HEAP_SHADER_VISIBLE;
 			desc.NodeMask = 0;
 			CHK(mDev->CreateDescriptorHeap(&desc, IID_PPV_ARGS(mDescHeapRtv.ReleaseAndGetAddressOf())));
-
-			//desc.Type = D3D12_CBV_SRV_UAV_DESCRIPTOR_HEAP;
-			//desc.NumDescriptors = 100;
-			//desc.Flags = D3D12_DESCRIPTOR_HEAP_SHADER_VISIBLE;
-			//desc.NodeMask = 0;
-			//CHK(mDev->CreateDescriptorHeap(&desc, IID_PPV_ARGS(mDescHeapCbvSrvUav.ReleaseAndGetAddressOf())));
 		}
 
 		auto rtvStep = mDev->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
