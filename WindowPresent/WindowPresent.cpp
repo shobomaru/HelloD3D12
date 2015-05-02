@@ -17,6 +17,7 @@ namespace
 {
 	const int WINDOW_WIDTH = 400;
 	const int WINDOW_HEIGHT = 240;
+	const int BUFFER_COUNT = 2;
 	HWND g_mainWindowHandle = 0;
 };
 
@@ -30,7 +31,7 @@ class D3D
 {
 	ComPtr<IDXGIFactory2> mDxgiFactory;
 	ComPtr<IDXGISwapChain1> mSwapChain;
-	ComPtr<ID3D12Resource> mD3DBuffer;
+	ComPtr<ID3D12Resource> mD3DBuffer[BUFFER_COUNT];
 	int mBufferWidth, mBufferHeight;
 	UINT64 mFrameCount = 0;
 
@@ -101,8 +102,11 @@ public:
 
 		mFenceEveneHandle = CreateEvent(nullptr, FALSE, FALSE, nullptr);
 
-		CHK(mSwapChain->GetBuffer(0, IID_PPV_ARGS(mD3DBuffer.ReleaseAndGetAddressOf())));
-		mD3DBuffer->SetName(L"SwapChain_Buffer");
+		for (int i = 0; i < BUFFER_COUNT; i++)
+		{
+			CHK(mSwapChain->GetBuffer(0, IID_PPV_ARGS(mD3DBuffer[i].ReleaseAndGetAddressOf())));
+			mD3DBuffer[i]->SetName(L"SwapChain_Buffer");
+		}
 
 		{
 			D3D12_DESCRIPTOR_HEAP_DESC desc = {};
@@ -119,7 +123,13 @@ public:
 			//CHK(mDev->CreateDescriptorHeap(&desc, IID_PPV_ARGS(mDescHeapCbvSrvUav.ReleaseAndGetAddressOf())));
 		}
 
-		mDev->CreateRenderTargetView(mD3DBuffer.Get(), nullptr, mDescHeapRtv->GetCPUDescriptorHandleForHeapStart());
+		auto rtvStep = mDev->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
+		for (auto i = 0u; i < BUFFER_COUNT; i++)
+		{
+			auto d = mDescHeapRtv->GetCPUDescriptorHandleForHeapStart();
+			d.ptr += i * rtvStep;
+			mDev->CreateRenderTargetView(mD3DBuffer[i].Get(), nullptr, d);
+		}
 	}
 	~D3D()
 	{
@@ -136,13 +146,16 @@ public:
 		// Set queue flushed event
 		CHK(mFence->SetEventOnCompletion(mFrameCount, mFenceEveneHandle));
 
+		auto descHandleRtvStep = mDev->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
 		D3D12_CPU_DESCRIPTOR_HANDLE descHandleRtv = mDescHeapRtv->GetCPUDescriptorHandleForHeapStart();
+		descHandleRtv.ptr += ((mFrameCount - 1) % BUFFER_COUNT) * descHandleRtvStep;
+		ID3D12Resource* d3dBuffer = mD3DBuffer[(mFrameCount - 1) % BUFFER_COUNT].Get();
 
 		//ID3D12DescriptorHeap* descHeapRtv[] = { mDescHeapCbvSrvUav.Get()/*, mDescHeapRtv.Get()*/ };
 		//mCmdList->SetDescriptorHeaps(descHeapRtv, ARRAYSIZE(descHeapRtv));
 
 		// Barrier Present -> RenderTarget
-		setResourceBarrier(mCmdList.Get(), mD3DBuffer.Get(), D3D12_RESOURCE_STATE_PRESENT, D3D12_RESOURCE_STATE_RENDER_TARGET);
+		setResourceBarrier(mCmdList.Get(), d3dBuffer, D3D12_RESOURCE_STATE_PRESENT, D3D12_RESOURCE_STATE_RENDER_TARGET);
 
 		// Viewport
 		D3D12_VIEWPORT viewport = {};
@@ -164,7 +177,7 @@ public:
 		}
 
 		// Barrier RenderTarget -> Present
-		setResourceBarrier(mCmdList.Get(), mD3DBuffer.Get(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PRESENT);
+		setResourceBarrier(mCmdList.Get(), d3dBuffer, D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PRESENT);
 
 		// Exec
 		CHK(mCmdList->Close());
