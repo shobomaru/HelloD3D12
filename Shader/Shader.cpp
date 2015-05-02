@@ -5,6 +5,7 @@
 #include <dxgi1_3.h>
 #include <d3d12.h>
 #include <d3dcompiler.h>
+#include "../_common/dxcommon.h"
 
 #pragma comment(lib, "dxgi.lib")
 #pragma comment(lib, "d3d12.lib")
@@ -158,10 +159,8 @@ public:
 		psoDesc.VS.BytecodeLength = vs->GetBufferSize();
 		psoDesc.PS.pShaderBytecode = ps->GetBufferPointer();
 		psoDesc.PS.BytecodeLength = ps->GetBufferSize();
-		psoDesc.RasterizerState.CullMode = D3D12_CULL_MODE_BACK;
-		psoDesc.RasterizerState.FillMode = D3D12_FILL_MODE_SOLID;
-		psoDesc.BlendState.RenderTarget[0].RenderTargetWriteMask = D3D12_COLOR_WRITE_ENABLE_ALL;
-		psoDesc.RasterizerState.DepthClipEnable = true;
+		psoDesc.RasterizerState = CD3DX12_RASTERIZER_DESC(CD3DX12_DEFAULT);
+		psoDesc.BlendState = CD3DX12_BLEND_DESC(CD3DX12_DEFAULT);
 		psoDesc.DepthStencilState.DepthEnable = false;
 		psoDesc.DepthStencilState.StencilEnable = false;
 		psoDesc.SampleMask = UINT_MAX;
