@@ -71,7 +71,7 @@ public:
 		ID3D12Device* dev;
 		CHK(D3D12CreateDevice(
 			nullptr,
-			D3D_FEATURE_LEVEL_11_1,
+			D3D_FEATURE_LEVEL_11_0,
 			IID_PPV_ARGS(&dev)));
 		mDev = dev;
 
@@ -87,7 +87,7 @@ public:
 		scDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
 		scDesc.SampleDesc.Count = 1;
 		scDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
-		scDesc.BufferCount = 2;
+		scDesc.BufferCount = BUFFER_COUNT;
 		scDesc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_SEQUENTIAL;
 		CHK(mDxgiFactory->CreateSwapChainForHwnd(mCmdQueue.Get(), hWnd, &scDesc, nullptr, nullptr, mSwapChain.ReleaseAndGetAddressOf()));
 
@@ -137,16 +137,12 @@ public:
 	{
 		mFrameCount++;
 
-		// Set queue flushed event
-		CHK(mFence->SetEventOnCompletion(mFrameCount, mFenceEveneHandle));
-
+		// Get current RTV descriptor
 		auto descHandleRtvStep = mDev->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
 		D3D12_CPU_DESCRIPTOR_HANDLE descHandleRtv = mDescHeapRtv->GetCPUDescriptorHandleForHeapStart();
 		descHandleRtv.ptr += ((mFrameCount - 1) % BUFFER_COUNT) * descHandleRtvStep;
+		// Get current swap chain
 		ID3D12Resource* d3dBuffer = mD3DBuffer[(mFrameCount - 1) % BUFFER_COUNT].Get();
-
-		//ID3D12DescriptorHeap* descHeapRtv[] = { mDescHeapCbvSrvUav.Get()/*, mDescHeapRtv.Get()*/ };
-		//mCmdList->SetDescriptorHeaps(descHeapRtv, ARRAYSIZE(descHeapRtv));
 
 		// Barrier Present -> RenderTarget
 		setResourceBarrier(mCmdList.Get(), d3dBuffer, D3D12_RESOURCE_STATE_PRESENT, D3D12_RESOURCE_STATE_RENDER_TARGET);
@@ -181,8 +177,11 @@ public:
 		// Present
 		CHK(mSwapChain->Present(1, 0));
 
+		// Set queue flushed event
+		CHK(mFence->SetEventOnCompletion(mFrameCount, mFenceEveneHandle));
+
 		// Wait for queue flushed
-		// CPU stall occured!
+		// This code would occur CPU stall!
 #if 1
 		CHK(mCmdQueue->Signal(mFence.Get(), mFrameCount));
 		DWORD wait = WaitForSingleObject(mFenceEveneHandle, 10000);
@@ -203,9 +202,9 @@ public:
 	
 private:
 	void setResourceBarrier(ID3D12GraphicsCommandList* commandList,
-							ID3D12Resource* res,
-							D3D12_RESOURCE_STATES before,
-							D3D12_RESOURCE_STATES after)
+			ID3D12Resource* res,
+			D3D12_RESOURCE_STATES before,
+			D3D12_RESOURCE_STATES after)
 	{
 		D3D12_RESOURCE_BARRIER desc = {};
 		desc.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
