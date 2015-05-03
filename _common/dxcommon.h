@@ -147,3 +147,47 @@ struct CD3DX12_RESOURCE_DESC : D3D12_RESOURCE_DESC
 		return desc;
 	}
 };
+
+struct CD3DX12_DESCRIPTOR_RANGE : D3D12_DESCRIPTOR_RANGE
+{
+	void Init(
+		D3D12_DESCRIPTOR_RANGE_TYPE rangeType,
+		UINT numDescriptors,
+		UINT baseShaderRegister,
+		UINT registerSpace = 0,
+		UINT offsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND)
+	{
+		RangeType = rangeType;
+		NumDescriptors = numDescriptors;
+		BaseShaderRegister = baseShaderRegister;
+		RegisterSpace = registerSpace;
+		OffsetInDescriptorsFromTableStart = offsetInDescriptorsFromTableStart;
+	}
+};
+
+struct CD3DX12_ROOT_DESCRIPTOR_TABLE : D3D12_ROOT_DESCRIPTOR_TABLE
+{
+	void Init(
+		UINT numDescriptorRanges,
+		const D3D12_DESCRIPTOR_RANGE* _pDescriptorRanges)
+	{
+		NumDescriptorRanges = numDescriptorRanges;
+		pDescriptorRanges = _pDescriptorRanges;
+	}
+};
+
+struct CD3DX12_ROOT_PARAMETER : D3D12_ROOT_PARAMETER
+{
+	void InitAsDescriptorTable(
+		UINT numDescriptorRanges,
+		const CD3DX12_DESCRIPTOR_RANGE* pDescriptorRanges,
+		D3D12_SHADER_VISIBILITY visibility = D3D12_SHADER_VISIBILITY_ALL)
+	{
+		ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
+		ShaderVisibility = visibility;
+		static_cast<CD3DX12_ROOT_DESCRIPTOR_TABLE&>(DescriptorTable).Init(
+			numDescriptorRanges,
+			pDescriptorRanges);
+	}
+};
+

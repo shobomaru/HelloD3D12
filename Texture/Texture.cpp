@@ -120,19 +120,18 @@ public:
 			D3D12_DESCRIPTOR_HEAP_DESC desc = {};
 			desc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
 			desc.NumDescriptors = 10;
-			//desc.Flags = D3D12_DESCRIPTOR_HEAP_SHADER_VISIBLE;
 			desc.NodeMask = 0;
 			CHK(mDev->CreateDescriptorHeap(&desc, IID_PPV_ARGS(mDescHeapRtv.ReleaseAndGetAddressOf())));
 
-			desc.Type = D3D12_CBV_SRV_UAV_DESCRIPTOR_HEAP;
+			desc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
 			desc.NumDescriptors = 100;
-			desc.Flags = D3D12_DESCRIPTOR_HEAP_SHADER_VISIBLE;
+			desc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
 			desc.NodeMask = 0;
 			CHK(mDev->CreateDescriptorHeap(&desc, IID_PPV_ARGS(mDescHeapCbvSrvUav.ReleaseAndGetAddressOf())));
 
-			desc.Type = D3D12_SAMPLER_DESCRIPTOR_HEAP;
+			desc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER;
 			desc.NumDescriptors = 10;
-			desc.Flags = D3D12_DESCRIPTOR_HEAP_SHADER_VISIBLE;
+			desc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
 			desc.NodeMask = 0;
 			CHK(mDev->CreateDescriptorHeap(&desc, IID_PPV_ARGS(mDescHeapSampler.ReleaseAndGetAddressOf())));
 		}
@@ -146,11 +145,11 @@ public:
 		}
 
 		{
-			D3D12_DESCRIPTOR_RANGE descRange1, descRange2;
-			descRange1.Init(D3D12_DESCRIPTOR_RANGE_SRV, 1, 0);
-			descRange2.Init(D3D12_DESCRIPTOR_RANGE_SAMPLER, 1, 0);
+			CD3DX12_DESCRIPTOR_RANGE descRange1, descRange2;
+			descRange1.Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 0);
+			descRange2.Init(D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER, 1, 0);
 
-			D3D12_ROOT_PARAMETER rootParam[2];
+			CD3DX12_ROOT_PARAMETER rootParam[2];
 			rootParam[0].InitAsDescriptorTable(1, &descRange1);
 			rootParam[1].InitAsDescriptorTable(1, &descRange2);
 
