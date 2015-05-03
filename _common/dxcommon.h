@@ -103,12 +103,15 @@ struct CD3DX12_HEAP_PROPERTIES : D3D12_HEAP_PROPERTIES
 
 struct CD3DX12_RESOURCE_DESC : D3D12_RESOURCE_DESC
 {
-	static D3D12_RESOURCE_DESC Buffer(UINT64 size)
+	static D3D12_RESOURCE_DESC Buffer(
+		UINT64 width,
+		D3D12_RESOURCE_FLAGS miscFlags = D3D12_RESOURCE_FLAG_NONE,
+		UINT64 alignment = 0)
 	{
 		D3D12_RESOURCE_DESC desc;
 		desc.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER;
-		desc.Alignment = 0;
-		desc.Width = size;
+		desc.Alignment = alignment;
+		desc.Width = width;
 		desc.Height = 1;
 		desc.DepthOrArraySize = 1;
 		desc.MipLevels = 1;
@@ -116,7 +119,7 @@ struct CD3DX12_RESOURCE_DESC : D3D12_RESOURCE_DESC
 		desc.SampleDesc.Count = 1;
 		desc.SampleDesc.Quality = 0;
 		desc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
-		desc.Flags = D3D12_RESOURCE_FLAG_NONE;
+		desc.Flags = miscFlags;
 		return desc;
 	}
 
