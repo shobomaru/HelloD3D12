@@ -271,7 +271,7 @@ public:
 			&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT), // No need to read/write by CPU
 			D3D12_HEAP_FLAG_NONE,
 			&resourceDesc,
-			D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE,
+			D3D12_RESOURCE_STATE_DEPTH_READ,
 			&dsvClearValue,
 			IID_PPV_ARGS(mDB.ReleaseAndGetAddressOf())));
 		mDB->SetName(L"DepthTexture");
@@ -329,7 +329,7 @@ public:
 		// Barrier SwapChain Present -> RenderTarget
 		setResourceBarrier(mCmdList.Get(), d3dBuffer, D3D12_RESOURCE_STATE_PRESENT, D3D12_RESOURCE_STATE_RENDER_TARGET);
 		// Barrier DepthTexture PixelShaderResource -> Depth
-		setResourceBarrier(mCmdList.Get(), mDB.Get(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_DEPTH_WRITE);
+		setResourceBarrier(mCmdList.Get(), mDB.Get(), D3D12_RESOURCE_STATE_DEPTH_READ, D3D12_RESOURCE_STATE_DEPTH_WRITE);
 
 		// Viewport & Scissor
 		D3D12_VIEWPORT viewport = {};
@@ -366,7 +366,7 @@ public:
 		}
 
 		// Barrier DepthTexture Depth -> PixelShaderResource
-		setResourceBarrier(mCmdList.Get(), mDB.Get(), D3D12_RESOURCE_STATE_DEPTH_WRITE, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+		setResourceBarrier(mCmdList.Get(), mDB.Get(), D3D12_RESOURCE_STATE_DEPTH_WRITE, D3D12_RESOURCE_STATE_DEPTH_READ);
 
 		// Draw Depth
 		{
