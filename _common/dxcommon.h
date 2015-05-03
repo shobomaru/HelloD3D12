@@ -5,6 +5,7 @@
 // so I made emulated code.
 
 struct CD3DX12_DEFAULT { };
+const static CD3DX12_DEFAULT D3DX12_DEFAULT;
 
 struct CD3DX12_RASTERIZER_DESC : D3D12_RASTERIZER_DESC
 {
@@ -116,6 +117,33 @@ struct CD3DX12_RESOURCE_DESC : D3D12_RESOURCE_DESC
 		desc.SampleDesc.Quality = 0;
 		desc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
 		desc.Flags = D3D12_RESOURCE_FLAG_NONE;
+		return desc;
+	}
+
+	static D3D12_RESOURCE_DESC Tex2D(
+		DXGI_FORMAT format,
+		UINT64 width,
+		UINT height,
+		UINT16 arraySize = 1,
+		UINT16 mipLelels = 0,
+		UINT sampleCount = 1,
+		UINT sampleQuality = 0,
+		D3D12_RESOURCE_FLAGS miscFlags = D3D12_RESOURCE_FLAG_NONE,
+		D3D12_TEXTURE_LAYOUT layout = D3D12_TEXTURE_LAYOUT_UNKNOWN,
+		UINT64 alignment = 0)
+	{
+		D3D12_RESOURCE_DESC desc;
+		desc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
+		desc.Alignment = alignment;
+		desc.Width = width;
+		desc.Height = height;
+		desc.DepthOrArraySize = arraySize;
+		desc.MipLevels = mipLelels;
+		desc.Format = format;
+		desc.SampleDesc.Count = sampleCount;
+		desc.SampleDesc.Quality = sampleQuality;
+		desc.Layout = layout;
+		desc.Flags = miscFlags;
 		return desc;
 	}
 };
