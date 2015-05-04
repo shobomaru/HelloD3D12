@@ -1,7 +1,7 @@
 ﻿*** HelloD3D12 ***
 
 Direct3D 12を使った簡単なサンプルです。
-Sample source codes using Direct3D 12.
+Sample source code using Direct3D 12.
 
 ゆっくりしていってね！！！
 Enjoy!
@@ -85,9 +85,9 @@ Enjoy!
 
 *** Environment ***
 
-Windows 10 Technical Preview Build 10041
-Visual Studio 2015 CTP 6
-Visual Studio Tools for Windows 10
+Windows 10 Technical Preview Build 10074
+Visual Studio Community 2015 RC
+Standalone Windows SDK for Windows 10
 
 
 
@@ -95,8 +95,6 @@ Visual Studio Tools for Windows 10
 
 1. VirtualBox on Windows 8.1 (WDDM1.3)
 2. Radeon R7 240 (WDDM2.0)
-
-WARPでもHARDWAREでも動きました。
 
 
 
