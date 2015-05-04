@@ -179,6 +179,28 @@ struct CD3DX12_ROOT_DESCRIPTOR_TABLE : D3D12_ROOT_DESCRIPTOR_TABLE
 	}
 };
 
+struct CD3DX12_ROOT_CONSTANTS : D3D12_ROOT_CONSTANTS
+{
+	void Init(
+		UINT num32BitValues,
+		UINT shaderRegister,
+		UINT registerSpace = 0)
+	{
+		Num32BitValues = num32BitValues;
+		ShaderRegister = shaderRegister;
+		RegisterSpace = registerSpace;
+	}
+};
+
+struct CD3DX12_ROOT_DESCRIPTOR : D3D12_ROOT_DESCRIPTOR
+{
+	void Init(UINT shaderRegister, UINT registerSpace = 0)
+	{
+		ShaderRegister = shaderRegister;
+		RegisterSpace = registerSpace;
+	}
+};
+
 struct CD3DX12_ROOT_PARAMETER : D3D12_ROOT_PARAMETER
 {
 	void InitAsDescriptorTable(
@@ -191,6 +213,29 @@ struct CD3DX12_ROOT_PARAMETER : D3D12_ROOT_PARAMETER
 		static_cast<CD3DX12_ROOT_DESCRIPTOR_TABLE&>(DescriptorTable).Init(
 			numDescriptorRanges,
 			pDescriptorRanges);
+	}
+
+	void InitAsConstants(
+		UINT num32BitValues,
+		UINT shaderRegister,
+		UINT registerSpace = 0,
+		D3D12_SHADER_VISIBILITY visibility = D3D12_SHADER_VISIBILITY_ALL)
+	{
+		ParameterType = D3D12_ROOT_PARAMETER_TYPE_32BIT_CONSTANTS;
+		ShaderVisibility = visibility;
+		static_cast<CD3DX12_ROOT_CONSTANTS&>(Constants).Init(
+			num32BitValues, shaderRegister, registerSpace);
+	}
+
+	void InitAsConstantBufferView(
+		UINT shaderRegister,
+		UINT registerSpace = 0,
+		D3D12_SHADER_VISIBILITY visibility = D3D12_SHADER_VISIBILITY_ALL)
+	{
+		ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
+		ShaderVisibility = visibility;
+		static_cast<CD3DX12_ROOT_DESCRIPTOR&>(Descriptor).Init(
+			shaderRegister, registerSpace);
 	}
 };
 
