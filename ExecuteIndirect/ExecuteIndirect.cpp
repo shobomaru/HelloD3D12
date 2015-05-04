@@ -476,7 +476,7 @@ public:
 			// Draw
 			cmdList->SetGraphicsRootSignature(mRootSignature.Get());
 			//ID3D12DescriptorHeap* descHeaps[] = { mDescHeapCbvSrvUav[cmdIndex].Get() };
-			//cmdList->SetDescriptorHeaps(descHeaps, ARRAYSIZE(descHeaps));
+			//cmdList->SetDescriptorHeaps(ARRAYSIZE(descHeaps), descHeaps);
 			{
 				//cmdList->SetGraphicsRootDescriptorTable(0,
 				//	mDescHeapCbvSrvUav[cmdIndex]->GetGPUDescriptorHandleForHeapStart().MakeOffsetted(tid * cbvDescHeapIncSize));
@@ -484,8 +484,8 @@ public:
 					mCB->GetGPUVirtualAddress() + CB_ALIGNED_SIZE * (cmdIndex * mInstanceCount + tid));
 				cmdList->SetPipelineState(mPso.Get());
 				cmdList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-				cmdList->SetVertexBuffers(0, &mVBView, 1);
-				cmdList->SetIndexBuffer(&mIBView);
+				cmdList->IASetVertexBuffers(0, 1, &mVBView);
+				cmdList->IASetIndexBuffer(&mIBView);
 				cmdList->DrawIndexedInstanced(mIndexCount, 1, 0, 0, 0);
 			}
 		}
