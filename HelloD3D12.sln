@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 14
-VisualStudioVersion = 14.0.22609.0
+VisualStudioVersion = 14.0.22823.1
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "WindowPresent", "WindowPresent\WindowPresent.vcxproj", "{7C0533F3-1ED8-4E8D-91C5-273E7E5C4878}"
 EndProject
@@ -32,6 +32,8 @@ EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Multithread", "Multithread\Multithread.vcxproj", "{56144559-48A8-4B7A-9611-9138125BAF24}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ExecuteIndirect", "ExecuteIndirect\ExecuteIndirect.vcxproj", "{1C2DE2A5-1447-4B8E-910C-00658A3F9929}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "D3D11Interop", "D3D11Interop\D3D11Interop.vcxproj", "{BA155BDA-0F09-4CB0-9CD2-2E210F7D2279}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -99,6 +101,10 @@ Global
 		{1C2DE2A5-1447-4B8E-910C-00658A3F9929}.Debug|x86.Build.0 = Debug|Win32
 		{1C2DE2A5-1447-4B8E-910C-00658A3F9929}.Release|x86.ActiveCfg = Release|Win32
 		{1C2DE2A5-1447-4B8E-910C-00658A3F9929}.Release|x86.Build.0 = Release|Win32
+		{BA155BDA-0F09-4CB0-9CD2-2E210F7D2279}.Debug|x86.ActiveCfg = Debug|Win32
+		{BA155BDA-0F09-4CB0-9CD2-2E210F7D2279}.Debug|x86.Build.0 = Debug|Win32
+		{BA155BDA-0F09-4CB0-9CD2-2E210F7D2279}.Release|x86.ActiveCfg = Release|Win32
+		{BA155BDA-0F09-4CB0-9CD2-2E210F7D2279}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
