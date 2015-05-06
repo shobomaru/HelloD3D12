@@ -1,4 +1,5 @@
 #include <Windows.h>
+#include <LM.h>
 #include <tchar.h>
 #include <wrl/client.h>
 #include <iostream>
@@ -9,6 +10,7 @@
 #include <d3dcompiler.h>
 #include "../_common/dxcommon.h"
 
+#pragma comment(lib,"Netapi32.lib")
 #pragma comment(lib, "dxgi.lib")
 #pragma comment(lib, "d3d12.lib")
 #pragma comment(lib, "d3dcompiler.lib")
@@ -226,9 +228,18 @@ int wmain(int argc, wchar_t** argv)
 	locale ctype(locale::classic(), locale(""), locale::ctype);
 	wcout.imbue(ctype);
 
+	// Get user name
 	wchar_t userName[128];
 	DWORD userNameSize = ARRAYSIZE(userName);
 	GetUserName(userName, &userNameSize);
+	// Get Microsoft account name
+	USER_INFO_10 *ui = nullptr;
+	NetUserGetInfo(nullptr, userName, 10, reinterpret_cast<LPBYTE*>(&ui));
+	if (ui)
+	{
+		wcscpy_s(userName, ui->usri10_full_name);
+		NetApiBufferFree(ui);
+	}
 	wcout << L"Dear "<< userName << L":" << endl << endl;
 
 	proc();
