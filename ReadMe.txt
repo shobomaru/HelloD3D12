@@ -82,6 +82,13 @@ Enjoy!
     Write a part of parameters and arguments of drawcall, and execute batches indirectly.
         (based on 8.ParallelFrame)
 
+11. Readback
+    ComputeShaderからのメッセージを読み取ります。
+    Read message from ComputeShader.
+
+xx. D3D11Interop
+    [Not worked.]
+
 
 *** Environment ***
 
@@ -95,6 +102,7 @@ Standalone Windows SDK for Windows 10
 
 1. VirtualBox on Windows 8.1 (WDDM1.3)
 2. Radeon R7 240 (WDDM2.0)
+-- D3D12CreateDevice() failed on build 10074
 
 
 
