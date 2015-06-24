@@ -37,6 +37,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "D3D11Interop", "D3D11Intero
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Readback", "Readback\Readback.vcxproj", "{2018E980-B875-4C25-8644-678BCB82423B}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Placement", "Placement\Placement.vcxproj", "{3F2BEF6D-0CD2-489A-AA74-C41ED173D443}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x86 = Debug|x86
@@ -111,6 +113,10 @@ Global
 		{2018E980-B875-4C25-8644-678BCB82423B}.Debug|x86.Build.0 = Debug|Win32
 		{2018E980-B875-4C25-8644-678BCB82423B}.Release|x86.ActiveCfg = Release|Win32
 		{2018E980-B875-4C25-8644-678BCB82423B}.Release|x86.Build.0 = Release|Win32
+		{3F2BEF6D-0CD2-489A-AA74-C41ED173D443}.Debug|x86.ActiveCfg = Debug|Win32
+		{3F2BEF6D-0CD2-489A-AA74-C41ED173D443}.Debug|x86.Build.0 = Debug|Win32
+		{3F2BEF6D-0CD2-489A-AA74-C41ED173D443}.Release|x86.ActiveCfg = Release|Win32
+		{3F2BEF6D-0CD2-489A-AA74-C41ED173D443}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
