@@ -18,6 +18,8 @@
 using namespace std;
 using Microsoft::WRL::ComPtr;
 
+#define USE_BC1_TEXTURE 1
+
 namespace
 {
 	const int WINDOW_WIDTH = 400;
@@ -213,6 +215,9 @@ public:
 			// Calcurate Mip
 			unsigned int initialWidth = 256, initialHeight = 256;
 			unsigned int bytePerPixel = 4;
+#if USE_BC1_TEXTURE
+			unsigned int bcByte = 8;
+#endif
 			auto minSize = min(initialHeight, initialWidth);
 			DWORD mipCount;
 			unsigned int copyDestOffset = 0;
@@ -231,7 +236,12 @@ public:
 				mTexMipSize[0] = make_tuple(w, h, copyDestOffset);
 				for (auto i = 1u; i < mTexMipSize.size(); i++)
 				{
-					copyDestOffset += texAlign(pitchAlign(bytePerPixel * w) * h);
+					int cw = w, ch = h;
+#if USE_BC1_TEXTURE
+					cw = (w + 3) / 4;
+					ch = (h + 3) / 4;
+#endif
+					copyDestOffset += texAlign(pitchAlign(bytePerPixel * cw) * ch);
 					mTexMipSize[i] = make_tuple(w /= 2, h /= 2, copyDestOffset);
 				}
 			}
@@ -240,13 +250,24 @@ public:
 
 			// Read DDS File
 			int totalTexSize = 0;
+#if USE_BC1_TEXTURE
 			for_each(mTexMipSize.cbegin(),
-					mTexMipSize.cend(),
-					[&](auto m) { totalTexSize += get<0>(m) * get<1>(m); });
-			totalTexSize *= bytePerPixel;
+				mTexMipSize.cend(),
+				[&](auto m) {
+				totalTexSize += ((get<0>(m) + 3) / 4) * ((get<1>(m) + 3) / 4) * bcByte;
+			});
+#else
+			for_each(mTexMipSize.cbegin(),
+				mTexMipSize.cend(),
+				[&](auto m) { totalTexSize += get<0>(m) * get<1>(m) * bytePerPixel; });
+#endif
 			vector<char> texData(totalTexSize);
 
+#if USE_BC1_TEXTURE
+			ifstream ifs("d3d12_bc1.dds", ios::binary);
+#else
 			ifstream ifs("d3d12.dds", ios::binary);
+#endif
 			if (!ifs)
 				throw runtime_error("Texture not found.");
 			ifs.seekg(128, ios::beg); // Skip DDS header
@@ -267,10 +288,19 @@ public:
 			for (auto i = 0u; i < mTexMipSize.size(); ++i)
 			{
 				auto curSlice = mTexMipSize[i];
-				for (auto h = 0u; h < get<1>(curSlice); ++h)
+				auto cw = get<0>(curSlice), ch = get<1>(curSlice);
+#if USE_BC1_TEXTURE
+				cw = (cw + 3) / 4;
+				ch = (ch + 3) / 4;
+#endif
+				for (auto h = 0u; h < ch; ++h)
 				{
-					auto r = get<2>(curSlice) + pitchAlign(bytePerPixel * get<0>(curSlice)) * h;
-					auto s = bytePerPixel * get<0>(curSlice);
+					auto r = get<2>(curSlice) + pitchAlign(bytePerPixel * cw) * h;
+#if USE_BC1_TEXTURE
+					auto s = bcByte * cw;
+#else
+					auto s = bytePerPixel * cw;
+#endif
 					memcpy_s(dest + r, s, texData.data() + copySrcOffset, s); // To maximize WC memory writing performance, size should be aligned by 16 byte on x86.
 					copySrcOffset += s;
 				}
@@ -278,9 +308,13 @@ public:
 			mTexUpload->Unmap(0, nullptr);
 		}
 
+		DXGI_FORMAT texFormat = DXGI_FORMAT_B8G8R8A8_UNORM;
+#if USE_BC1_TEXTURE
+		texFormat = DXGI_FORMAT_BC1_UNORM;
+#endif
 		{
 			auto resourceDesc = CD3DX12_RESOURCE_DESC::Tex2D(
-				DXGI_FORMAT_B8G8R8A8_UNORM, get<0>(mTexMipSize[0]), get<1>(mTexMipSize[0]), 1, (UINT16)mTexMipSize.size(),
+				texFormat, get<0>(mTexMipSize[0]), get<1>(mTexMipSize[0]), 1, (UINT16)mTexMipSize.size(),
 				1, 0, D3D12_RESOURCE_FLAG_NONE,
 				D3D12_TEXTURE_LAYOUT_UNKNOWN, 0);
 			CHK(mDev->CreateCommittedResource(
@@ -292,7 +326,7 @@ public:
 				IID_PPV_ARGS(mTexDefault.ReleaseAndGetAddressOf())));
 		}
 		D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
-		srvDesc.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
+		srvDesc.Format = texFormat;
 		srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
 		srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
 		srvDesc.Texture2D.MipLevels = mTexMipSize.size();
@@ -341,18 +375,31 @@ public:
 				srcLoc.pResource = mTexUpload.Get();
 				srcLoc.Type = D3D12_TEXTURE_COPY_TYPE_PLACED_FOOTPRINT;
 				srcLoc.PlacedFootprint.Offset = get<2>(mTexMipSize[i]);
+#if USE_BC1_TEXTURE
+				srcLoc.PlacedFootprint.Footprint.Format = DXGI_FORMAT_BC1_UNORM;
+				srcLoc.PlacedFootprint.Footprint.Width = max(4, get<0>(mTexMipSize[i]));
+				srcLoc.PlacedFootprint.Footprint.Height = max(4, get<1>(mTexMipSize[i]));
+				auto cw = (get<0>(mTexMipSize[i]) + 3) / 4;
+				srcLoc.PlacedFootprint.Footprint.RowPitch = pitchAlign(cw * 8);
+#else
 				srcLoc.PlacedFootprint.Footprint.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
 				srcLoc.PlacedFootprint.Footprint.Width = get<0>(mTexMipSize[i]);
 				srcLoc.PlacedFootprint.Footprint.Height = get<1>(mTexMipSize[i]);
-				srcLoc.PlacedFootprint.Footprint.Depth = 1;
 				srcLoc.PlacedFootprint.Footprint.RowPitch = pitchAlign(get<0>(mTexMipSize[i]) * 4);
+#endif
+				srcLoc.PlacedFootprint.Footprint.Depth = 1;
 				D3D12_TEXTURE_COPY_LOCATION destLoc = {};
 				destLoc.pResource = mTexDefault.Get();
 				destLoc.SubresourceIndex = i;
 				destLoc.Type = D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX;
 				D3D12_BOX box = {};
+#if USE_BC1_TEXTURE
+				box.right = max(4, get<0>(mTexMipSize[i]));
+				box.bottom = max(4, get<1>(mTexMipSize[i]));
+#else
 				box.right = get<0>(mTexMipSize[i]);
 				box.bottom = get<1>(mTexMipSize[i]);
+#endif
 				box.back = 1;
 				mCmdList->CopyTextureRegion(&destLoc, 0, 0, 0, &srcLoc, &box);
 			}
