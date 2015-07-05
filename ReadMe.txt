@@ -37,8 +37,10 @@ Enjoy!
 4a. TextureOptimize
     ミップマップを適用し、Defaultヒープに転送したテクスチャを描きます。
     SampleLevel()で小さいミップレベルを指定しています。
+    BC圧縮テクスチャを扱えます。
     Draw a texture with mipmap and transferred to default heap.
     Set small mip level by SampleLevel().
+    Support BC compressed texture format.
 
 5. ConstantBuffer
     定数バッファとテクスチャを1つのDescriptorHeapにまとめて描画します。
@@ -92,17 +94,16 @@ xx. D3D11Interop
 
 *** Environment ***
 
-Windows 10 Technical Preview Build 10074
+Windows 10 Technical Preview Build 10162
 Visual Studio Community 2015 RC
-Standalone Windows SDK for Windows 10
-
+Windows 10 SDK (10158)
+-- https://dev.windows.com/en-us/downloads/windows-10-developer-tools
 
 
 *** Test ***
 
 1. VirtualBox on Windows 8.1 (WDDM1.3)
 2. Radeon R7 240 (WDDM2.0)
--- D3D12CreateDevice() failed on build 10074
 
 
 
