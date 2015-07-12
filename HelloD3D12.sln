@@ -39,6 +39,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Readback", "Readback\Readba
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Placement", "Placement\Placement.vcxproj", "{3F2BEF6D-0CD2-489A-AA74-C41ED173D443}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "UpdateConstantEmu", "UpdateConstantEmu\UpdateConstantEmu.vcxproj", "{5D33C70D-D191-4FC9-8856-D27539CEFCAB}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x86 = Debug|x86
@@ -117,6 +119,10 @@ Global
 		{3F2BEF6D-0CD2-489A-AA74-C41ED173D443}.Debug|x86.Build.0 = Debug|Win32
 		{3F2BEF6D-0CD2-489A-AA74-C41ED173D443}.Release|x86.ActiveCfg = Release|Win32
 		{3F2BEF6D-0CD2-489A-AA74-C41ED173D443}.Release|x86.Build.0 = Release|Win32
+		{5D33C70D-D191-4FC9-8856-D27539CEFCAB}.Debug|x86.ActiveCfg = Debug|Win32
+		{5D33C70D-D191-4FC9-8856-D27539CEFCAB}.Debug|x86.Build.0 = Debug|Win32
+		{5D33C70D-D191-4FC9-8856-D27539CEFCAB}.Release|x86.ActiveCfg = Release|Win32
+		{5D33C70D-D191-4FC9-8856-D27539CEFCAB}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

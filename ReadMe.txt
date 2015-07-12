@@ -88,6 +88,14 @@ Enjoy!
     ComputeShaderからのメッセージを読み取ります。
     Read message from ComputeShader.
 
+12. Placement
+    異なるリソースを一つのヒープから切り出して作成します。
+    Create different resources which is cut dowm from one heap.
+
+13. UpdateConstantEmu
+    Direct3D 11のUpdateSubresourceと同等の処理を実装します。
+    Implement equivant of UpdateSubresource().
+
 xx. D3D11Interop
     [Not worked.]
 
