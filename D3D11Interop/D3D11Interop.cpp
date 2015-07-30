@@ -470,6 +470,7 @@ public:
 
 		// Release RTV for D3D11
 		mDev11on12->ReleaseWrappedResources(&backBuffer11, 1);
+		mDevCont11->Flush();
 
 		// Present
 		CHK(mSwapChain->Present(1, 0));

@@ -99,8 +99,9 @@ Enjoy!
     Direct3D 11のUpdateSubresourceと同等の処理を実装します。
     Implement equivant of UpdateSubresource().
 
-xx. D3D11Interop
-    [Not worked.]
+14. D3D11Interop
+    Direct3D 12デバイスからDirect3D 11デバイスを作って描画します。
+    Create and draw Direct3D 11 device from Direct3D 12 device.
 
 
 *** Environment ***
