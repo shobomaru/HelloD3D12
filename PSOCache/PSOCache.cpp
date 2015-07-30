@@ -192,7 +192,7 @@ public:
 			{ "NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 12, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
 			{ "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 24, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
 		};
-		vector<char> psoBin;
+		vector<char> psoBin, vsBin, psBin;
 		bool psoCache = false;
 		{
 			ifstream psoStream("pso.bin", ios::binary);
@@ -202,8 +202,25 @@ public:
 				psoBin.resize((size_t)psoStream.tellg());
 				psoStream.seekg(0);
 				psoStream.read(psoBin.data(), psoBin.size());
-				psoCache = true;
 			}
+			ifstream vsStream("vs.bin", ios::binary);
+			if (vsStream)
+			{
+				vsStream.seekg(0, ios::end);
+				vsBin.resize((size_t)vsStream.tellg());
+				vsStream.seekg(0);
+				vsStream.read(vsBin.data(), vsBin.size());
+			}
+			ifstream psStream("ps.bin", ios::binary);
+			if (psStream)
+			{
+				psStream.seekg(0, ios::end);
+				psBin.resize((size_t)psStream.tellg());
+				psStream.seekg(0);
+				psStream.read(psBin.data(), psBin.size());
+			}
+			if (psoStream && vsStream && psStream)
+				psoCache = true;
 		}
 		D3D12_GRAPHICS_PIPELINE_STATE_DESC psoDesc = {};
 		psoDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
@@ -211,10 +228,10 @@ public:
 		psoDesc.InputLayout.pInputElementDescs = inputLayout;
 		psoDesc.IBStripCutValue = D3D12_INDEX_BUFFER_STRIP_CUT_VALUE_DISABLED;
 		psoDesc.pRootSignature = mRootSignature.Get();
-		psoDesc.VS.pShaderBytecode = vs->GetBufferPointer();
-		psoDesc.VS.BytecodeLength = vs->GetBufferSize();
-		psoDesc.PS.pShaderBytecode = ps->GetBufferPointer();
-		psoDesc.PS.BytecodeLength = ps->GetBufferSize();
+		psoDesc.VS.pShaderBytecode = vsBin.empty() ? vs->GetBufferPointer() : vsBin.data();
+		psoDesc.VS.BytecodeLength = vsBin.empty() ? vs->GetBufferSize() : vsBin.size();
+		psoDesc.PS.pShaderBytecode = psBin.empty() ? ps->GetBufferPointer() : psBin.data();
+		psoDesc.PS.BytecodeLength = psBin.empty() ? ps->GetBufferSize() : psBin.size();
 		psoDesc.RasterizerState = CD3DX12_RASTERIZER_DESC(CCCD3DX12_DEFAULT());
 		psoDesc.BlendState = CD3DX12_BLEND_DESC(CCCD3DX12_DEFAULT());
 		psoDesc.DepthStencilState.DepthEnable = true;
@@ -232,8 +249,7 @@ public:
 			psoDesc.CachedPSO.CachedBlobSizeInBytes = psoBin.size();
 		}
 		CHK(mDev->CreateGraphicsPipelineState(&psoDesc, IID_PPV_ARGS(mPso.ReleaseAndGetAddressOf())));
-		vs->Release();
-		ps->Release();
+		// If failed using cached PSO, you should regenerate cache.
 
 		// Serialize PSO
 		if (!psoCache)
@@ -242,7 +258,13 @@ public:
 			CHK(mPso->GetCachedBlob(&bin));
 			ofstream psoStream("pso.bin", ios::binary);
 			psoStream.write(reinterpret_cast<const char*>(bin->GetBufferPointer()), bin->GetBufferSize());
+			ofstream vsStream("vs.bin", ios::binary);
+			vsStream.write(reinterpret_cast<const char*>(vs->GetBufferPointer()), vs->GetBufferSize());
+			ofstream psStream("ps.bin", ios::binary);
+			psStream.write(reinterpret_cast<const char*>(ps->GetBufferPointer()), ps->GetBufferSize());
 		}
+		vs->Release();
+		ps->Release();
 
 		WaveFrontReader<uint16_t> mesh;
 		CHK(mesh.Load(L"../Mesh/teapot.obj"));

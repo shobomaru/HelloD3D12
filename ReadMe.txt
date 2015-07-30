@@ -103,6 +103,10 @@ Enjoy!
     Direct3D 12デバイスからDirect3D 11デバイスを作って描画します。
     Create and draw Direct3D 11 device from Direct3D 12 device.
 
+15. PSOCache
+    PipelineStateをシリアライズし、ファイルに保存します。
+    Serialize pipeline state and save to file.
+
 
 *** Environment ***
 
