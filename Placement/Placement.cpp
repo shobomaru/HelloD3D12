@@ -203,8 +203,8 @@ public:
 		psoDesc.VS.BytecodeLength = vs->GetBufferSize();
 		psoDesc.PS.pShaderBytecode = ps->GetBufferPointer();
 		psoDesc.PS.BytecodeLength = ps->GetBufferSize();
-		psoDesc.RasterizerState = CD3DX12_RASTERIZER_DESC(D3DX12_DEFAULT);
-		psoDesc.BlendState = CD3DX12_BLEND_DESC(D3DX12_DEFAULT);
+		psoDesc.RasterizerState = CD3DX12_RASTERIZER_DESC(CCCD3DX12_DEFAULT());
+		psoDesc.BlendState = CD3DX12_BLEND_DESC(CCCD3DX12_DEFAULT());
 		psoDesc.DepthStencilState.DepthEnable = true;
 		psoDesc.DepthStencilState.DepthFunc = D3D12_COMPARISON_FUNC_LESS_EQUAL;
 		psoDesc.DepthStencilState.DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ALL;
@@ -254,7 +254,7 @@ public:
 				nullptr,
 				IID_PPV_ARGS(mVB.ReleaseAndGetAddressOf())));
 			auto info = mDev->GetResourceAllocationInfo(0, 1, &desc);
-			placementHeapSize += info.SizeInBytes;
+			placementHeapSize += (uint32_t)info.SizeInBytes;
 		}
 		mVB->SetName(L"VertexBuffer");
 		char* vbUploadPtr = nullptr;
@@ -310,7 +310,7 @@ public:
 				nullptr,
 				IID_PPV_ARGS(mCB.ReleaseAndGetAddressOf())));
 			auto info = mDev->GetResourceAllocationInfo(0, 1, &desc);
-			placementHeapSize += info.SizeInBytes;
+			placementHeapSize += (uint32_t)info.SizeInBytes;
 		}
 		mCB->SetName(L"ConstantBuffer");
 		D3D12_CONSTANT_BUFFER_VIEW_DESC cbvDesc = {};
