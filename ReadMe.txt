@@ -34,6 +34,7 @@ Enjoy!
     テクスチャを描画します。
     Draw a texture.
         (based on 2. Shader)
+    [Not worked on HARDWARE device.]
 4a. TextureOptimize
     ミップマップを適用し、Defaultヒープに転送したテクスチャを描きます。
     SampleLevel()で小さいミップレベルを指定しています。
@@ -61,9 +62,11 @@ Enjoy!
     UVは適当です。
     Draw the Utah teapot with a texture.
         (based on 4. Texture)
+    [Not worked on HARDWARE device.]
 7b. MeshTexBundle
     バンドルを使って描画します。
     Draw using Bundle.
+    [Not worked on HARDWARE device.]
 
 8. ParallelFrame
     コマンドリストを複数使い、フレームの終わりでCPUをストールさせないようにします。
@@ -102,16 +105,16 @@ xx. D3D11Interop
 
 *** Environment ***
 
-Windows 10 Technical Preview Build 10162
-Visual Studio Community 2015 RC
-Windows 10 SDK (10158)
+Windows 10 Home/Pro 10240
+Visual Studio Community 2015 RTM
+Windows 10 SDK (10240)
 -- https://dev.windows.com/en-us/downloads/windows-10-developer-tools
 
 
 *** Test ***
 
-1. VirtualBox on Windows 8.1 (WDDM1.3)
-2. Radeon R7 240 (WDDM2.0)
+1. Intel HD Graphics 4400 (WDDM2.0)
+2. AMD Radeon R7 240 (WDDM2.0)
 
 
 
